@@ -1,0 +1,115 @@
+//  -------------------------------------------------------------------------
+//  Copyright (C) 2022 BMW AG
+//  -------------------------------------------------------------------------
+//  This Source Code Form is subject to the terms of the Mozilla Public
+//  License, v. 2.0. If a copy of the MPL was not distributed with this
+//  file, You can obtain one at https://mozilla.org/MPL/2.0/.
+//  -------------------------------------------------------------------------
+
+apply plugin: 'maven-publish'
+apply plugin: "com.android.library"
+apply plugin: 'kotlin-android'
+android {
+    compileSdkVersion 29
+
+    ndkVersion "22.1.7171670"
+
+    defaultConfig {
+        // at least sdk version 24 is needed because of Completable Future feature support; SDK 18+ is needed because of OpenGL ES 3.0+
+        minSdkVersion 24
+        targetSdkVersion 29
+
+        ndk {
+            abiFilters 'x86_64', 'arm64-v8a'//other options: 'x86', 'arm64-v8a', 'armeabi-v7a'
+        }
+
+        externalNativeBuild {
+            cmake {
+                // ramseslogic target is used as target name as 'ramses-logic' along with 'ramses-shared-lib..' would cause problems with prefab
+                // (multiple targets with the same word before the first '-' will break; in this case 'ramses')
+                targets "ramseslogic", "ramses-shared-lib-android-egl-es-3-0", "RamsesJNI"
+                // Don't move this line! It must be here, otherwise the prefab build will not recognize that the STL should be shared
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
+
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_8
+            targetCompatibility JavaVersion.VERSION_1_8
+        }
+    }
+
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                artifactId 'ramses-aar'
+                version '1.0'
+                artifact("$buildDir/outputs/aar/ramses-aar-release.aar")
+            }
+        }
+    }
+
+    buildTypes {
+        release {}
+    }
+
+    // this makes it possible to export prefab packages from this build
+    buildFeatures {
+        prefabPublishing true
+    }
+
+    prefab {
+        // names have to resemble actual cmake targets
+        ramsesl {   //breaks if contains slashes!
+            name "ramseslogic"
+            headers "${project.buildDir}/intermediates/mergedRLogicIncludeDir"
+        }
+        ramses {   //breaks if contains slashes!
+            name "ramses-shared-lib-android-egl-es-3-0"
+            headers "${project.buildDir}/intermediates/mergedRamsesIncludeDir"
+        }
+    }
+
+    sourceSets{
+        main {
+            manifest.srcFile "AndroidManifest.xml"
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            // exactly 3.18.1 to use SDK cmake and avoid issues with different version from platform
+            version "3.18.1"
+            path "${ramsesAARRootDir}/CMakeLists.txt"
+        }
+    }
+}
+
+preBuild.doFirst {
+    // currently prefabPublishing feature only allows for one header directory (see https://issuetracker.google.com/issues/168775349)
+    // therefore copy first all header directories into one intermediate folder
+    delete "${project.buildDir}/intermediates/mergedRLogicIncludeDir"
+    delete "${project.buildDir}/intermediates/mergedRamsesIncludeDir"
+
+    copy {
+        from   "${ramsesLogicRootDir}/include"
+
+        into "${project.buildDir}/intermediates/mergedRLogicIncludeDir"
+        include "**/*.h"
+    }
+
+    copy {
+        from   "${ramsesRootDir}/client/ramses-client/ramses-text-api/include",
+               "${ramsesRootDir}/framework/ramses-framework-api/include",
+               "${ramsesRootDir}/renderer/RendererLib/ramses-renderer-api/include",
+               "${ramsesRootDir}/client/ramses-client/ramses-client-api/include",
+               "${ramsesRootDir}/proprietary/external/displaycluster/include"
+
+        into "${project.buildDir}/intermediates/mergedRamsesIncludeDir"
+        include "**/*.h"
+    }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+}

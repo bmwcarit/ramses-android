@@ -1,0 +1,39 @@
+import java.nio.file.Paths
+
+//  -------------------------------------------------------------------------
+//  Copyright (C) 2021 BMW AG
+//  -------------------------------------------------------------------------
+//  This Source Code Form is subject to the terms of the Mozilla Public
+//  License, v. 2.0. If a copy of the MPL was not distributed with this
+//  file, You can obtain one at https://mozilla.org/MPL/2.0/.
+//  -------------------------------------------------------------------------
+
+buildscript {
+    apply from: "${project.rootDir}/repositories.gradle"
+    apply from: "${project.rootDir}/versions.gradle"
+
+    ext {
+        // 'projectDir' is gradle property for the directory containing the build script (gradle.build)
+        ramsesAARRootDir = Paths.get(project.projectDir.getParent())
+        ramsesRootDir = "${ramsesAARRootDir}/ramses"
+        ramsesLogicRootDir = "${ramsesAARRootDir}/ramses-logic"
+    }
+
+    repositories globalRepositoryDefinition
+
+    dependencies {
+        classpath "com.android.tools.build:gradle:$android_build_tools_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories globalRepositoryDefinition
+}
+
+task clean(type: Delete) {
+     delete rootProject.buildDir
+}

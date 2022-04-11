@@ -1,0 +1,6 @@
+[submodule "ramses"]
+	path = ramses
+	url = https://github.com/bmwcarit/ramses.git
+[submodule "ramses-logic"]
+	path = ramses-logic
+	url = https://github.com/bmwcarit/ramses-logic.git
