@@ -121,8 +121,8 @@ afterEvaluate {
                 name = "GitHubPackages"
                 url = uri("https://maven.pkg.github.com/bmwcarit/ramses-android")
                 credentials {
-                    username = project.findProperty("gpr.user") ?: System.getenv("GPR_USERNAME")
-                    password = project.findProperty("gpr.key") ?: System.getenv("GPR_TOKEN")
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GPR_TOKEN")
                 }
             }
         }
