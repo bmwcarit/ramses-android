@@ -5,7 +5,7 @@ This repository builds and packages the following projects into the single AAR a
 * [Ramses](https://github.com/bmwcarit/ramses/blob/master/README.md)
 * [Ramses Logic](https://github.com/bmwcarit/ramses-logic/blob/master/README.md)
 
-Please refer to the [Ramses Website](https://ramses3d.org) for the further materials and information on the Ramses Project.
+Please refer to the [Ramses Website](https://ramses3d.org) for further materials and information on the Ramses Project.
 
 # License
 
