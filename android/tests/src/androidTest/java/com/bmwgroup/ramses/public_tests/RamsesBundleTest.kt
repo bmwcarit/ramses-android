@@ -32,9 +32,9 @@ class RamsesBundleTest {
         val ramsesBundle = RamsesBundle(null)
 
         val logicFD =
-            getInstrumentation().context.resources.assets.openFd("testLogic.bin")
+            getInstrumentation().context.resources.assets.openFd("testLogic.rlogic")
         val sceneFD =
-            getInstrumentation().context.resources.assets.openFd("testScene.bin")
+            getInstrumentation().context.resources.assets.openFd("testScene.ramses")
 
         assertTrue(
             ramsesBundle.loadScene(
@@ -54,7 +54,7 @@ class RamsesBundleTest {
         val ramsesBundle = RamsesBundle(null)
 
         val sceneFD =
-            getInstrumentation().context.resources.assets.openFd("testScene.bin")
+            getInstrumentation().context.resources.assets.openFd("testScene.ramses")
 
         assertTrue(
             ramsesBundle.loadScene(
@@ -74,7 +74,7 @@ class RamsesBundleTest {
         val ramsesBundle = RamsesBundle(null)
 
         val logicFD =
-            getInstrumentation().context.resources.assets.openFd("testLogic.bin")
+            getInstrumentation().context.resources.assets.openFd("testLogic.rlogic")
         assertFailsWith<IllegalArgumentException> {
             ramsesBundle.loadScene(
                 null,
@@ -89,9 +89,9 @@ class RamsesBundleTest {
     fun ramsesBundle_LoadingSceneFailsWithValidSceneAndInvalidLogic() {
         val ramsesBundle = RamsesBundle(null)
         val logicFD = getInstrumentation().context.resources.assets
-            .openFd("testLogic_invalid.bin")
+            .openFd("testLogic_invalid.rlogic")
         val sceneFD = getInstrumentation().context.resources.assets
-            .openFd("testScene.bin")
+            .openFd("testScene.ramses")
 
         assertFalse(
             ramsesBundle.loadScene(
@@ -111,9 +111,9 @@ class RamsesBundleTest {
         val ramsesBundle = RamsesBundle(null)
 
         val sceneFD = getInstrumentation().context.resources.assets
-            .openFd("testScene_invalid.bin")
+            .openFd("testScene_invalid.ramses")
         val logicFD = getInstrumentation().context.resources.assets
-            .openFd("testLogic.bin")
+            .openFd("testLogic.rlogic")
 
         assertFalse(
             ramsesBundle.loadScene(
@@ -133,9 +133,9 @@ class RamsesBundleTest {
         val ramsesBundle = RamsesBundle(null)
 
         val sceneFD = getInstrumentation().context.resources.assets
-            .openFd("testScene.bin")
+            .openFd("testScene.ramses")
         val logicFD = getInstrumentation().context.resources.assets
-            .openFd("testLogic.bin")
+            .openFd("testLogic.rlogic")
 
         assertTrue(
             ramsesBundle.loadScene(
@@ -158,9 +158,9 @@ class RamsesBundleTest {
         val ramsesBundle = RamsesBundle(null)
 
         val sceneFD = getInstrumentation().context.resources.assets
-            .openFd("testScene.bin")
+            .openFd("testScene.ramses")
         val logicFD = getInstrumentation().context.resources.assets
-            .openFd("testLogic.bin")
+            .openFd("testLogic.rlogic")
 
         assertTrue(
             ramsesBundle.loadScene(
@@ -203,7 +203,7 @@ class RamsesBundleTest {
         val ramsesBundle = RamsesBundle(null)
 
         val sceneFD = getInstrumentation().context.resources.assets
-            .openFd("testScene.bin")
+            .openFd("testScene.ramses")
 
         assertTrue(
             ramsesBundle.loadScene(

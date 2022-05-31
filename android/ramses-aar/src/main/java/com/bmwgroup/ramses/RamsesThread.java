@@ -30,7 +30,9 @@ import java.util.concurrent.ExecutionException;
  * (e.g. it is recommended to call initRamsesThreadAndLoadScene in onCreate/onViewCreated) that are typically executed
  * in the recommended callbacks to make use of the RamsesBundle in a tested and safe way. Otherwise the
  * user has to make sure that calling the functions in other places works as expected.
- * Once the initRamsesThreadAndLoadScene method is finished the scene is loaded.
+ * Once the initRamsesThreadAndLoadScene method is finished the scene is loaded and the thread (HandlerThread) is started.
+ * The functions that are designed to operate on RamsesThread
+ * should be called after the thread is started (after initRamsesThreadAndLoadScene() is called).
  * Subsequently the display should be created and Render/Update loop started.
  * This loop has a certain rate that runs by default at 60 Hz. It can be changed with setRenderingFramerate.
  * Rendering/updating can be started and stopped with startRendering and stopRendering methods.
@@ -43,7 +45,7 @@ import java.util.concurrent.ExecutionException;
  * it, the access wouldn't be thread safe and thus an Exception will be thrown. To avoid this, the
  * access has to be made safe with the addRunnableToThreadQueue.
  */
-public abstract class RamsesThread extends HandlerThread {
+public abstract class RamsesThread {
     /**
      * Constructor which changes thread name and optionally activates debugging functionality if valid context provided.
      *
@@ -51,7 +53,6 @@ public abstract class RamsesThread extends HandlerThread {
      * @param context    Context used to enable debugging functionality
      */
     public RamsesThread(String threadName, @Nullable Context context) {
-        super(threadName);
         m_threadName = "RamsesThread_" + threadName;
         m_context = context;
     }
@@ -98,19 +99,27 @@ public abstract class RamsesThread extends HandlerThread {
      * <li>Loading ramses scene and logic from the applications assets</li>
      * <li>Calling the RamsesThreads onSceneLoaded or onSceneLoadFailed callbacks depending on the loading success</li>
      * </ul>
-     *
      * This method initializes the RamsesThread so don't queue it to RamsesThread with addRunnableToThreadQueue
      * <p>
-     * It is typically called in the activities onCreate or fragments onViewCreated Callback to set up
+     * It is typically called in the activities onCreate or fragments onViewCreated Callback to set up.
+     * If initialization fails for some reason, C++ resources will be automatically cleaned up, but Android thread will keep running.
+     * In order to reinitialize RamsesThread after failed or successful initialization,
+     * the object first must be cleaned-up with destroyRamsesBundleAndQuitThread().
+     * </p>
      *
      * @param assetManager   the AssetManager used to load scene and logic from File Descriptor
      * @param ramsesFileName the file name of the ramses scene that should be loaded
      * @param logicFileName  the file name of the ramses logic that should be loaded
      */
     public void initRamsesThreadAndLoadScene(final AssetManager assetManager, final String ramsesFileName, final String logicFileName) {
-        this.start();
+        if (m_workerThread == null) {
+            m_workerThread = new HandlerThread(m_threadName);
+            m_workerThread.start();
+        } else {
+            throw new IllegalThreadStateException("Calling initRamsesThreadAndLoadScene() on an object that is already initialized.");
+        }
         // getLooper blocks until looper is initialized
-        m_ramsesThreadHandler = new Handler(getLooper());
+        m_ramsesThreadHandler = new Handler(m_workerThread.getLooper());
 
         // Explicitly wait for resumed and focused state before rendering anything
         m_ramsesThreadHandler.post(new Runnable() {
@@ -119,8 +128,8 @@ public abstract class RamsesThread extends HandlerThread {
                 Log.i(m_threadName, "initRamsesThreadAndLoadScene: loading scene from files " + ramsesFileName + ", " + logicFileName);
 
                 /*
-                 Creates a RamsesBundle instance which holds all low-level Ramses
-                 objects needed to render and manage a scene.
+                 * Creates a RamsesBundle instance which holds all low-level Ramses
+                 * objects needed to render and manage a scene.
                  */
                 m_ramsesBundle = new RamsesBundle(m_context);
 
@@ -128,8 +137,8 @@ public abstract class RamsesThread extends HandlerThread {
                 startUpdateLoop();
 
                 /*
-                Only I/O exception gets caught here loading the scene from file.
-                When using the scene object later it has to be checked that the scene is not null.
+                 * Only I/O exception gets caught here loading the scene from file.
+                 * When using the scene object later it has to be checked that the scene is not null.
                  */
                 try {
                     AssetFileDescriptor fdRamses = assetManager.openFd(ramsesFileName);
@@ -151,6 +160,9 @@ public abstract class RamsesThread extends HandlerThread {
                                 e.getCause() + "Look at stacktrace for further info: ", e);
                     }
                 } else {
+                    m_ramsesBundle.dispose();
+                    m_ramsesBundle = null;
+
                     Log.e(m_threadName, "initRamsesThreadAndLoadScene: Scene loading from files " + ramsesFileName + ", " + logicFileName + " failed!");
                     try {
                         onSceneLoadFailed();
@@ -369,9 +381,21 @@ public abstract class RamsesThread extends HandlerThread {
      */
     public boolean isRendering() {
         ensureRunningInRamsesThread("isRendering");
-        ensureRamsesBundleCreated("isRendering");
 
-        return m_ramsesBundle.isRendering();
+        return (m_ramsesBundle != null) && m_ramsesBundle.isRendering();
+    }
+
+    /**
+     * Checks if RamsesThread is alive.
+     * <p>
+     * The function first checks if the thread is properly initialized, then queries the underlying HandlerThread's state.
+     * HandlerThread is instantiated/started by initRamsesThreadAndLoadScene and stopped/destroyed by destroyRamsesBundleAndQuitThread.
+     * </p>
+     *
+     * @return whether the RamsesThread is alive
+     */
+    public boolean isAlive() {
+        return m_workerThread != null && m_workerThread.isAlive() && m_ramsesThreadHandler != null;
     }
 
     /**
@@ -407,28 +431,33 @@ public abstract class RamsesThread extends HandlerThread {
         m_ramsesThreadHandler.post(new Runnable() {
             @Override
             public void run() {
-                ensureRamsesBundleCreated("destroyRamsesBundleAndQuitThread");
-
                 // stop updating logic
                 m_updateLoopRunning = false;
 
                 // no more runnables will be executed after this runnable, even if they are already queued
                 Looper.myLooper().quit();
-                Log.i(m_threadName, "destroyRamsesBundleAndQuitThread: disposing RamsesBundle");
+
                 /*
-                 Cleans up all underlying c++ objects for the RamsesBundle. As the Properties just
-                 contain pointers to c++ objects of the RamsesBundle, they don't have to be disposed
-                 separately.
+                 * Cleans up all underlying c++ objects for the RamsesBundle. As the Properties just
+                 * contain pointers to c++ objects of the RamsesBundle, they don't have to be disposed
+                 * separately.
                  */
-                m_ramsesBundle.dispose();
-                m_ramsesBundle = null;
-                m_sceneLoaded = false;
+                if (m_ramsesBundle != null) {
+                    Log.i(m_threadName, "destroyRamsesBundleAndQuitThread: disposing RamsesBundle");
+                    m_ramsesBundle.dispose();
+                    m_ramsesBundle = null;
+                    m_sceneLoaded = false;
+                } else {
+                    Log.i(m_threadName, "destroyRamsesBundleAndQuitThread: not destroying RamsesBundle since none is instantiated.");
+                }
                 futureRamsesDisposed.complete(true);
             }
         });
 
-        // disposing of RamsesBundle has to be finished together with the activity's/fragments onDestroy method
-        // otherwise there can be crashes, because objects are deleted and accessed at the wrong time
+        /*
+         * disposing of RamsesBundle has to be finished together with the activity's/fragments onDestroy method
+         * otherwise there can be crashes, because objects are deleted and accessed at the wrong time
+         */
         try {
             futureRamsesDisposed.get();
         } catch (ExecutionException e) {
@@ -439,8 +468,9 @@ public abstract class RamsesThread extends HandlerThread {
 
         m_ramsesThreadHandler = null;
 
-        this.quit();
-        this.join();
+        m_workerThread.quitSafely();
+        m_workerThread.join();
+        m_workerThread = null;
     }
 
     /**
@@ -462,10 +492,10 @@ public abstract class RamsesThread extends HandlerThread {
             @Override
             public void run() {
                 ensureRamsesBundleCreated("resizeDisplay");
-               /*
-                Tell Ramses that the display was resized, and adapt the scene's viewport to the
-                new size and aspect ratio.
-                */
+                /*
+                 * Tell Ramses that the display was resized, and adapt the scene's viewport to the
+                 * new size and aspect ratio.
+                 */
                 m_ramsesBundle.resizeDisplay(width, height);
 
                 if (m_sceneLoaded) {
@@ -578,11 +608,16 @@ public abstract class RamsesThread extends HandlerThread {
     }
 
     private void ensureRunningInRamsesThread(String functionName) {
-        if (Thread.currentThread().getId() != this.getId()) {
-            Log.e(m_threadName, "Calling function RamsesThread." + functionName +
-                    " from outside the thread is not allowed");
-            throw new IllegalThreadStateException("Calling Function RamsesThread." + functionName +
-                    " from outside the thread is not allowed");
+        if (m_workerThread == null) {
+            String errorMessage = "Ramses Thread not initialized yet.";
+            Log.e(m_threadName, errorMessage);
+            throw new IllegalThreadStateException(errorMessage);
+        }
+        if (Thread.currentThread().getId() != m_workerThread.getId()) {
+            String errorMessage = "Calling Function RamsesThread." + functionName +
+                    " from outside the thread is not allowed";
+            Log.e(m_threadName, errorMessage);
+            throw new IllegalThreadStateException(errorMessage);
         }
     }
 
@@ -596,7 +631,12 @@ public abstract class RamsesThread extends HandlerThread {
     }
 
     private void ensureNotRunningInRamsesThread(String functionName) {
-        if (Thread.currentThread().getId() == this.getId()) {
+        if (m_workerThread == null) {
+            String errorMessage = "Ramses Thread not initialized yet.";
+            Log.e(m_threadName, errorMessage);
+            throw new IllegalThreadStateException(errorMessage);
+        }
+        if (Thread.currentThread().getId() == m_workerThread.getId()) {
             Log.e(m_threadName, "Calling function RamsesThread." + functionName +
                     " from inside ramses thread is not allowed");
             throw new IllegalThreadStateException("Calling Function RamsesThread." + functionName +
@@ -623,7 +663,8 @@ public abstract class RamsesThread extends HandlerThread {
      * This callback gets called when the display resizes. This is a good place to update viewport etc. to new size.
      * <p>
      * It is executed within RamsesThread so if there is no reason for it, don't use addRunnableToThreadQueue in here
-     * @param width width of the display
+     *
+     * @param width  width of the display
      * @param height height of the display
      */
     protected abstract void onDisplayResize(int width, int height);
@@ -655,7 +696,8 @@ public abstract class RamsesThread extends HandlerThread {
 
     private RamsesBundle m_ramsesBundle;
     private Handler m_ramsesThreadHandler;
-    private Context m_context = null;
+    private HandlerThread m_workerThread;
+    private Context m_context;
 
     private boolean m_sceneLoaded = false;
     private boolean m_updateLoopRunning = true;
