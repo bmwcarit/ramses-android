@@ -14,14 +14,14 @@ android {
     buildToolsVersion "29.0.2"
 
     defaultConfig {
-        applicationId "com.bmwgroup.ramsestests"
+        applicationId "com.bmwgroup.ramsessample"
         minSdkVersion 24
         targetSdkVersion 29
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     aaptOptions {
-        noCompress "bin"
+        noCompress "ramses", "rlogic"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -34,12 +34,12 @@ preBuild.doFirst {
         from "${ramsesLogicRootDir}/unittests/res"
 
         into "${ramsesAARRootDir}/android/tests/src/androidTest/assets"
-        include "**/*.bin"
+        include "**/*.ramses", "**/*.rlogic"
     }
 }
 
 dependencies {
-    // needed to make mock tests app buildable
+    // needed to make mock sample app buildable
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "androidx.appcompat:appcompat:$appcompat_version"
     // Only the following test related dependencies are important

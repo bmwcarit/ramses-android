@@ -80,8 +80,8 @@ class RamshTest {
 
     @Test
     fun ramsesBundle_dumpSceneToFileFailsWhenBundleAlreadyDisposed() {
-        val sceneFD = getInstrumentation().context.resources.assets.openFd("testScene.bin")
-        val logicFD = getInstrumentation().context.resources.assets.openFd("testLogic.bin")
+        val sceneFD = getInstrumentation().context.resources.assets.openFd("testScene.ramses")
+        val logicFD = getInstrumentation().context.resources.assets.openFd("testLogic.rlogic")
 
         assertTrue(
             ramsesBundle.loadScene(
@@ -117,8 +117,8 @@ class RamshTest {
 
     @Test
     fun ramsesBundle_dumpSceneToFileWithDedicatedCommand() {
-        val sceneFD = getInstrumentation().context.resources.assets.openFd("testScene.bin")
-        val logicFD = getInstrumentation().context.resources.assets.openFd("testLogic.bin")
+        val sceneFD = getInstrumentation().context.resources.assets.openFd("testScene.ramses")
+        val logicFD = getInstrumentation().context.resources.assets.openFd("testLogic.rlogic")
 
         assertTrue(
             ramsesBundle.loadScene(
@@ -176,8 +176,8 @@ class RamshTest {
 
         ramsesThread.initRamsesThreadAndLoadScene(
             getInstrumentation().context.resources.assets,
-            "testScene.bin",
-            "testLogic.bin"
+            "testScene.ramses",
+            "testLogic.rlogic"
         )
 
         val future = CompletableFuture<Boolean>()
@@ -212,7 +212,6 @@ class RamshTest {
 
             try {
                 ramsesThread.destroyRamsesBundleAndQuitThread()
-                ramsesThread.join()
                 assertFalse(ramsesThread.isAlive)
             } catch (e: InterruptedException) {
                 Log.e("ramsesThread_dumpSceneToFileWithDedicatedCommand", "InterruptedException:", e)
@@ -223,9 +222,9 @@ class RamshTest {
     @Test
     fun ramsesBundle_dumpSceneToFileWithDedicatedCommandFailsWithNoFilePath() {
         val sceneFD = getInstrumentation().context.resources.assets
-            .openFd("testScene.bin")
+            .openFd("testScene.ramses")
         val logicFD = getInstrumentation().context.resources.assets
-            .openFd("testLogic.bin")
+            .openFd("testLogic.rlogic")
 
         assertTrue(
             ramsesBundle.loadScene(
@@ -264,9 +263,9 @@ class RamshTest {
     @Test
     fun ramsesBundle_dumpSceneToFileWithGenericCommand() {
         val sceneFD = getInstrumentation().context.resources.assets
-            .openFd("testScene.bin")
+            .openFd("testScene.ramses")
         val logicFD = getInstrumentation().context.resources.assets
-            .openFd("testLogic.bin")
+            .openFd("testLogic.rlogic")
 
         assertTrue(
             ramsesBundle.loadScene(
@@ -307,9 +306,9 @@ class RamshTest {
     @Test
     fun ramsesBundle_dumpSceneToFileWithGenericCommandFailsWithNoCommand() {
         val sceneFD = getInstrumentation().context.resources.assets
-            .openFd("testScene.bin")
+            .openFd("testScene.ramses")
         val logicFD = getInstrumentation().context.resources.assets
-            .openFd("testLogic.bin")
+            .openFd("testLogic.rlogic")
 
         assertTrue(
             ramsesBundle.loadScene(
