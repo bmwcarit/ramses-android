@@ -1,4 +1,4 @@
-name: Build and publish AAR
+name: Build and publish AAR to Maven Central
 
 on:
   push:
@@ -21,8 +21,21 @@ jobs:
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
 
-    - name: Execute Gradle build and publish AAR
-      run: ./android/gradlew -p ./android :ramses-aar:build && ./android/gradlew -p ./android publish
+    - name: Execute Gradle build
+      run: ./android/gradlew -p ./android :ramses-aar:build
+
+    - name: Decode
+      run: |
+        echo "${{secrets.OSSRH_GPG_SECRET_KEY}}" > ~/.gradle/secring.gpg.b64
+        base64 -d ~/.gradle/secring.gpg.b64 > ~/.gradle/secring.gpg
+
+    - name: Publish Library
+      run: |
+        ./android/gradlew -p ./android :ramses-aar:publish -Psigning.keyId=${{secrets.SIGNING_KEY_ID}} -Psigning.password=${{ secrets.OSSRH_PASSWORD }} -Psigning.secretKeyRingFile=~/.gradle/secring.gpg --no-daemon --no-parallel
+        ./android/gradlew -p ./android closeAndReleaseRepository
       env:
-        GPR_TOKEN: ${{ secrets.GPR_TOKEN }}
+        ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
+        ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_PASSWORD }}
+        OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+        OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
 
