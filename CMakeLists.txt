@@ -19,7 +19,7 @@ project(RamsesAAR
     VERSION ${AAR_VERSION}
     DESCRIPTION "Android Archive (AAR) which packages ramses and ramses-logic for use in Android"
     LANGUAGES CXX
-    HOMEPAGE_URL  "https://github.com/bmwcarit/ramses-aar"
+    HOMEPAGE_URL  "https://github.com/bmwcarit/ramses-android"
 )
 
 # let cmake know c++ version
