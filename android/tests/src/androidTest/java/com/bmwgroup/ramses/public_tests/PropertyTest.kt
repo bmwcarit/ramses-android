@@ -20,17 +20,18 @@ class PropertyTest {
     companion object {
         private lateinit var ramsesBundle: RamsesBundle
 
-        private lateinit var inputs: Property
-        private lateinit var outputs: Property
+        private lateinit var intfFloatInput: Property
+        private lateinit var scriptInputs: Property
+        private lateinit var scriptOutputs: Property
     }
 
     @BeforeTest
     fun setupRamsesBundleAndScene() {
         ramsesBundle = RamsesBundle(null)
         val logicFD =
-            getInstrumentation().context.resources.assets.openFd("testLogic.bin")
+            getInstrumentation().context.resources.assets.openFd("testLogic.rlogic")
         val sceneFD =
-            getInstrumentation().context.resources.assets.openFd("testScene.bin")
+            getInstrumentation().context.resources.assets.openFd("testScene.ramses")
 
         assertTrue(
             ramsesBundle.loadScene(
@@ -41,8 +42,9 @@ class PropertyTest {
             )
         )
 
-        inputs = ramsesBundle.getLogicNodeRootInput("script1")
-        outputs = ramsesBundle.getLogicNodeRootOutput("script1")
+        intfFloatInput = ramsesBundle.getLogicNodeRootInput("intf").getChild("struct").getChild("floatInput")
+        scriptInputs = ramsesBundle.getLogicNodeRootInput("script1")
+        scriptOutputs = ramsesBundle.getLogicNodeRootOutput("script1")
     }
 
     @AfterTest
@@ -52,17 +54,17 @@ class PropertyTest {
 
     @Test
     fun property_canGetChildByName() {
-        val structInput = inputs.getChild("structInput")
+        val structInput = scriptInputs.getChild("structInput")
         assertNotNull(structInput)
         assertFailsWith<NoSuchElementException> { structInput.getChild("invalidChildName") }
 
-        val floatOutput = outputs.getChild("floatOutput")
+        val floatOutput = scriptOutputs.getChild("floatOutput")
         assertNotNull(floatOutput)
     }
 
     @Test
     fun property_canGetNestedChildByNameAndSetData() {
-        val structInput = inputs.getChild("structInput")
+        val structInput = scriptInputs.getChild("structInput")
         assertNotNull(structInput)
 
         val propNested = structInput.getChild("nested")
@@ -75,16 +77,16 @@ class PropertyTest {
 
     @Test
     fun property_canGetChildCount() {
-        val structInput = inputs.getChild("structInput")
+        val structInput = scriptInputs.getChild("structInput")
         assertNotNull(structInput)
         assertEquals(structInput.childCount, 1)
 
-        assertEquals(outputs.childCount, 2)
+        assertEquals(scriptOutputs.childCount, 2)
     }
 
     @Test
     fun property_canGetChildByIndex() {
-        val structInput = inputs.getChild("structInput")
+        val structInput = scriptInputs.getChild("structInput")
         assertNotNull(structInput)
         val childCount = structInput.childCount
         val propNested = structInput.getChild(childCount - 1)
@@ -92,14 +94,14 @@ class PropertyTest {
 
         assertFailsWith<NoSuchElementException> { structInput.getChild(childCount) }
 
-        val outputsChildCount = outputs.childCount
-        assertNotNull(outputs.getChild(outputsChildCount -1))
-        assertFailsWith<NoSuchElementException> { outputs.getChild(outputsChildCount) }
+        val outputsChildCount = scriptOutputs.childCount
+        assertNotNull(scriptOutputs.getChild(outputsChildCount -1))
+        assertFailsWith<NoSuchElementException> { scriptOutputs.getChild(outputsChildCount) }
     }
 
     @Test
     fun property_canGetNestedChildByIndexAndSetData() {
-        val structInput = inputs.getChild("structInput")
+        val structInput = scriptInputs.getChild("structInput")
         assertNotNull(structInput)
 
         val propNested = structInput.getChild("nested")
@@ -114,7 +116,7 @@ class PropertyTest {
 
     @Test
     fun property_canCheckIfPropertyHasChild() {
-        val structInput = inputs.getChild("structInput").getChild("nested")
+        val structInput = scriptInputs.getChild("structInput").getChild("nested")
         assertNotNull(structInput)
 
         assertTrue(structInput.hasChild("data1"))
@@ -123,21 +125,21 @@ class PropertyTest {
         assertFalse(structInput.hasChild("invalidChildName"))
         assertFailsWith<NoSuchElementException> { structInput.getChild("invalidChildName") }
 
-        assertTrue(outputs.hasChild("floatOutput"))
-        assertFalse(outputs.hasChild("invalidChildName"))
-        assertFailsWith<NoSuchElementException> { outputs.getChild("invalidChildName") }
+        assertTrue(scriptOutputs.hasChild("floatOutput"))
+        assertFalse(scriptOutputs.hasChild("invalidChildName"))
+        assertFailsWith<NoSuchElementException> { scriptOutputs.getChild("invalidChildName") }
     }
 
     @Test
     fun property_cannotSetOutputs() {
-        val floatOutput = outputs.getChild("floatOutput")
+        val floatOutput = scriptOutputs.getChild("floatOutput")
         assertNotNull(floatOutput)
         assertFailsWith<java.lang.IllegalStateException> { floatOutput.set(11.4f) }
     }
 
     @Test
     fun property_canGetAndSetArrayData() {
-        val arrayInput = inputs.getChild("arrayInput")
+        val arrayInput = scriptInputs.getChild("arrayInput")
         assertNotNull(arrayInput)
         val childCount = arrayInput.childCount
         assertEquals(childCount, 9)
@@ -154,7 +156,7 @@ class PropertyTest {
 
     @Test
     fun property_gettersAndSettersThrowExceptionOnUsageAfterRamsesBundleDisposed() {
-        val structInput = inputs.getChild("structInput")
+        val structInput = scriptInputs.getChild("structInput")
         val propertyData1 = structInput.getChild("nested").getChild("data1")
         propertyData1.set("test")
 
@@ -175,7 +177,7 @@ class PropertyTest {
 
     @Test
     fun property_canGetSetInt() {
-        val inputInt = inputs.getChild("intInput")
+        val inputInt = scriptInputs.getChild("intInput")
         inputInt.set(17)
         assertEquals(inputInt.int, 17)
 
@@ -187,19 +189,18 @@ class PropertyTest {
 
     @Test
     fun property_canGetSetFloat() {
-        val floatInput = inputs.getChild("floatInput")
-        floatInput.set(11.3f)
-        assertEquals(floatInput.float, 11.3f, 0.0f)
+        intfFloatInput.set(11.3f)
+        assertEquals(intfFloatInput.float, 11.3f, 0.0f)
 
-        assertFailsWith<IllegalArgumentException> { floatInput.set(22) }
-        assertNotEquals(floatInput.float, 22.0f)
+        assertFailsWith<IllegalArgumentException> { intfFloatInput.set(22) }
+        assertNotEquals(intfFloatInput.float, 22.0f)
 
-        assertFailsWith<Property.PropertyTypeMismatchException> { floatInput.boolean }
+        assertFailsWith<Property.PropertyTypeMismatchException> { intfFloatInput.boolean }
     }
 
     @Test
     fun property_canGetSetBool() {
-        val boolInput = inputs.getChild("boolInput")
+        val boolInput = scriptInputs.getChild("boolInput")
         boolInput.set(true)
         assertTrue(boolInput.boolean)
 
@@ -211,7 +212,7 @@ class PropertyTest {
 
     @Test
     fun property_canGetSetString() {
-        val stringInput = inputs.getChild("stringInput")
+        val stringInput = scriptInputs.getChild("stringInput")
         stringInput.set("testString")
         assertEquals(stringInput.string, "testString")
 
@@ -223,7 +224,7 @@ class PropertyTest {
 
     @Test
     fun property_canGetSetVec2f() {
-        val vec2fInput = inputs.getChild("vec2fInput")
+        val vec2fInput = scriptInputs.getChild("vec2fInput")
         vec2fInput.set(11.3f, 43.4f)
         assertContentEquals(vec2fInput.vec2f, floatArrayOf(11.3f, 43.4f))
 
@@ -237,7 +238,7 @@ class PropertyTest {
 
     @Test
     fun property_canGetSetVec3f() {
-        val vec3fInput = inputs.getChild("vec3fInput")
+        val vec3fInput = scriptInputs.getChild("vec3fInput")
         vec3fInput.set(11.3f, 43.4f, 10.0f)
         assertContentEquals(vec3fInput.vec3f, floatArrayOf(11.3f, 43.4f, 10.0f))
 
@@ -252,7 +253,7 @@ class PropertyTest {
 
     @Test
     fun property_canGetSetVec4f() {
-        val vec4fInput = inputs.getChild("vec4fInput")
+        val vec4fInput = scriptInputs.getChild("vec4fInput")
         vec4fInput.set(11.3f, 43.4f, 10.0f, 56.3f)
         assertContentEquals(vec4fInput.vec4f, floatArrayOf(11.3f, 43.4f, 10.0f, 56.3f))
 
@@ -267,7 +268,7 @@ class PropertyTest {
 
     @Test
     fun property_canGetSetVec2i() {
-        val vec2iInput = inputs.getChild("vec2iInput")
+        val vec2iInput = scriptInputs.getChild("vec2iInput")
         vec2iInput.set(11, 43)
         assertContentEquals(vec2iInput.vec2i, intArrayOf(11, 43))
 
@@ -282,7 +283,7 @@ class PropertyTest {
 
     @Test
     fun property_canGetSetVec3i() {
-        val vec3iInput = inputs.getChild("vec3iInput")
+        val vec3iInput = scriptInputs.getChild("vec3iInput")
         vec3iInput.set(11, 43, 12)
         assertContentEquals(vec3iInput.vec3i, intArrayOf(11, 43, 12))
 
@@ -297,7 +298,7 @@ class PropertyTest {
 
     @Test
     fun property_canGetSetVec4i() {
-        val vec4iInput = inputs.getChild("vec4iInput")
+        val vec4iInput = scriptInputs.getChild("vec4iInput")
         vec4iInput.set(11, 43, 12, 65)
         assertContentEquals(vec4iInput.vec4i, intArrayOf(11, 43, 12, 65))
 
@@ -312,9 +313,7 @@ class PropertyTest {
 
     @Test
     fun property_settingPropertyValueWithUnsupportedDataTypeFails() {
-        val floatInput = inputs.getChild("floatInput")
-
-        assertFailsWith<IllegalArgumentException> { floatInput.set(213.12) }
+        assertFailsWith<IllegalArgumentException> { intfFloatInput.set(213.12) }
     }
 
     @Test
@@ -326,9 +325,8 @@ class PropertyTest {
         assertNotNull(translation)
 
         assertContentEquals(translation.vec3f, floatArrayOf(0.0f, 2.0f, 3.0f))
-        val floatInput = inputs.getChild("floatInput")
         val newFloatInputValue = 5.3f
-        floatInput.set(newFloatInputValue)
+        intfFloatInput.set(newFloatInputValue)
 
         assertTrue(ramsesBundle.updateLogic())
         assertTrue(ramsesBundle.flushRamsesScene())
@@ -343,9 +341,8 @@ class PropertyTest {
         assertNotNull(floatUniform)
 
         assertEquals(floatUniform.float, 5.0f, 0.0f)
-        val floatInput = inputs.getChild("floatInput")
         val newFloatInputValue = 4.3f
-        floatInput.set(newFloatInputValue)
+        intfFloatInput.set(newFloatInputValue)
         assertTrue(ramsesBundle.updateLogic())
         assertTrue(ramsesBundle.flushRamsesScene())
         assertEquals(floatUniform.float, 5.0f + newFloatInputValue, 0.0f)
@@ -359,9 +356,8 @@ class PropertyTest {
         assertNotNull(cameraVpWidth)
 
         assertEquals(cameraVpWidth.int, 100)
-        val floatInput = inputs.getChild("floatInput")
         val newFloatInputValue = 9.3f
-        floatInput.set(newFloatInputValue)
+        intfFloatInput.set(newFloatInputValue)
         assertTrue(ramsesBundle.updateLogic())
         assertTrue(ramsesBundle.flushRamsesScene())
         assertEquals(cameraVpWidth.int, 100 + ceil(newFloatInputValue).toInt())
@@ -369,25 +365,32 @@ class PropertyTest {
 
     @Test
     fun property_canGetSetAnimationNode() {
-        val animationNode = ramsesBundle.getLogicNodeRootInput("animNode")
-        assertNotNull(animationNode)
+        val animationInputs = ramsesBundle.getLogicNodeRootInput("animNode")
+        assertNotNull(animationInputs)
 
-        val play = animationNode.getChild("play")
-        assertNotNull(play)
-        assertFalse(play.boolean)
-        play.set(true)
-        assertTrue(play.boolean)
+        assertTrue(ramsesBundle.updateLogic())
+        assertTrue(ramsesBundle.flushRamsesScene())
 
-        val timeDelta = animationNode.getChild("timeDelta")
-        assertNotNull(timeDelta)
-        assertEquals(0.0f, timeDelta.float, 0.0f)
-        timeDelta.set(1.3f)
-        assertEquals(1.3f, timeDelta.float, 0.0f)
+        // Value with default state (progress == 0, keyframes = [1, 2]
+        val animationOutputValue = ramsesBundle.getLogicNodeRootOutput("animNode").getChild("channel")
+        assertNotNull(animationOutputValue)
+        assertEquals(1.0f, animationOutputValue.float, 0.0f)
+
+        val progress = animationInputs.getChild("progress")
+        assertNotNull(progress)
+        progress.set(1.0f)
+        assertEquals(1.0f, progress.float, 0.0f)
+
+        assertTrue(ramsesBundle.updateLogic())
+        assertTrue(ramsesBundle.flushRamsesScene())
+
+        // Progress = 1.0 -> animated value is 2.0f
+        assertEquals(2.0f, animationOutputValue.float, 0.0f)
     }
 
     @Test
     fun property_canGetName() {
-        val structInput = inputs.getChild("structInput")
+        val structInput = scriptInputs.getChild("structInput")
         assertNotNull(structInput)
         assertEquals("structInput", structInput.name)
         assertEquals(structInput.childCount, 1)
@@ -396,7 +399,7 @@ class PropertyTest {
 
     @Test
     fun property_getNameReturnsNullIfPropertyHasNoName() {
-        val arrayInput = inputs.getChild("arrayInput")
+        val arrayInput = scriptInputs.getChild("arrayInput")
         assertNotNull(arrayInput)
         val childCount = arrayInput.childCount
         assertEquals(childCount, 9)

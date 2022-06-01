@@ -11,8 +11,7 @@ package com.bmwgroup.ramses;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 
-//This test app is just a mock to make it possible to have instrumented tests for the aar library
-public class TestActivity extends AppCompatActivity
+public class MainActivity extends AppCompatActivity
 {
     @Override
     protected void onCreate(Bundle savedInstanceState) {

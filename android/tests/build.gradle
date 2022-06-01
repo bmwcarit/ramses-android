@@ -21,7 +21,7 @@ android {
     }
 
     aaptOptions {
-        noCompress "bin"
+        noCompress "ramses", "rlogic"
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -34,7 +34,7 @@ preBuild.doFirst {
         from "${ramsesLogicRootDir}/unittests/res"
 
         into "${ramsesAARRootDir}/android/tests/src/androidTest/assets"
-        include "**/*.bin"
+        include "**/*.ramses", "**/*.rlogic"
     }
 }
 
