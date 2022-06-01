@@ -1,4 +1,4 @@
-name: Build and publish AAR
+name: Build AAR
 
 # Only pushes and PRs against the master branch are built
 on:
@@ -23,6 +23,6 @@ jobs:
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
 
-    - name: Execute Gradle build and publish AAR
+    - name: Execute Gradle build of AAR
       run: ./android/gradlew -p ./android :ramses-aar:build
 
