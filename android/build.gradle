@@ -8,6 +8,15 @@ import java.nio.file.Paths
 //  file, You can obtain one at https://mozilla.org/MPL/2.0/.
 //  -------------------------------------------------------------------------
 
+apply plugin: 'io.codearte.nexus-staging'
+
+nexusStaging {
+    serverUrl = "https://s01.oss.sonatype.org/service/local/" //required only for projects registered in Sonatype after 2021-02-24
+    packageGroup = "io.github.bmwcarit" //optional if packageGroup == project.getGroup()
+    username = System.getenv("OSSRH_USERNAME")
+    password = System.getenv("OSSRH_PASSWORD")
+}
+
 buildscript {
     apply from: "${project.rootDir}/repositories.gradle"
     apply from: "${project.rootDir}/versions.gradle"
@@ -24,6 +33,7 @@ buildscript {
     dependencies {
         classpath "com.android.tools.build:gradle:$android_build_tools_version"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.30.0"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files

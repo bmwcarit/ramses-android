@@ -7,6 +7,7 @@
 //  -------------------------------------------------------------------------
 
 apply plugin: 'maven-publish'
+apply plugin: 'signing'
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
@@ -107,23 +108,52 @@ dependencies {
 
 afterEvaluate {
     publishing {
-        repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/bmwcarit/ramses-android")
-                credentials {
-                    username = System.getenv("GITHUB_ACTOR")
-                    password = System.getenv("GPR_TOKEN")
-                }
-            }
-        }
         publications {
             ramses_release(MavenPublication) {
                 from(components.release)
-                groupId 'com.bmwgroup.ramses'
                 artifactId 'ramses-aar'
+                groupId 'io.github.bmwcarit'
                 version '1.0.0'
+
+                pom {
+                    description = "Low-level rendering engine for Android"
+                    name = "Ramses Android"
+                    packaging = "aar"
+                    url = "https://github.com/bmwcarit/ramses-android.git"
+
+                    scm {
+                        connection = "scm:git:git@github.com:bmwcarit/ramses-android.git"
+                        developerConnection = "scm:git:ssh://github.com/bmwcarit/ramses-android.git"
+                        url = "https://github.com/bmwcarit/ramses-android"
+                    }
+                    license {
+                        name = "Mozilla Public License Version 2.0"
+                        url = "http://mozilla.org/MPL/2.0/"
+                        distribution = "repo"
+                    }
+                    developers {
+                        developer {
+                            id = "ramses_maintainers"
+                            name = "Ramses Maintainers"
+                        }
+                    }
+                }
             }
         }
+
+        repositories {
+            maven {
+                credentials {
+                    username findProperty("ossrhUsername") ?: System.getenv("OSSRH_USERNAME")
+                    password findProperty("ossrhPassword") ?: System.getenv("OSSRH_PASSWORD")
+                }
+
+                url "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            }
+        }
+    }
+    signing {
+        required { gradle.taskGraph.hasTask("publish") }
+        sign publishing.publications.ramses_release
     }
 }
