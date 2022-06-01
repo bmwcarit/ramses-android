@@ -26,12 +26,12 @@ jobs:
 
     - name: Decode
       run: |
-        echo "${{secrets.OSSRH_GPG_SECRET_KEY}}" > ~/.gradle/secring.gpg.b64
+        echo "${{secrets.OSSRH_GPG_SECRET_KEY}}" > $HOME/secring.gpg.b64
         base64 -d ~/.gradle/secring.gpg.b64 > ~/.gradle/secring.gpg
 
     - name: Publish Library
       run: |
-        ./android/gradlew -p ./android :ramses-aar:publish -Psigning.keyId=${{secrets.SIGNING_KEY_ID}} -Psigning.password=${{ secrets.OSSRH_PASSWORD }} -Psigning.secretKeyRingFile=~/.gradle/secring.gpg --no-daemon --no-parallel
+        ./android/gradlew -p ./android :ramses-aar:publish -Psigning.keyId=${{secrets.SIGNING_KEY_ID}} -Psigning.password=${{ secrets.OSSRH_PASSWORD }} -Psigning.secretKeyRingFile=$HOME/secring.gpg --no-daemon --no-parallel
         ./android/gradlew -p ./android closeAndReleaseRepository
       env:
         ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
