@@ -27,7 +27,7 @@ jobs:
     - name: Decode
       run: |
         echo "${{secrets.OSSRH_GPG_SECRET_KEY}}" > $HOME/secring.gpg.b64
-        base64 -d ~/.gradle/secring.gpg.b64 > ~/.gradle/secring.gpg
+        base64 -d $HOME/.gradle/secring.gpg.b64 > $HOME/.gradle/secring.gpg
 
     - name: Publish Library
       run: |
