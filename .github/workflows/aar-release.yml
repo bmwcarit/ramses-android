@@ -2,16 +2,14 @@ name: Build and publish AAR to Maven Central
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+  pull_request:
+    branches:
+      - master
 
 jobs:
   gradle:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: 'recursive'
 
     - uses: actions/setup-java@v2
       with:
@@ -21,24 +19,18 @@ jobs:
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
 
-    - name: Execute Gradle build
-      run: ./android/gradlew -p ./android :ramses-aar:build
 
     - name: Decode
       run: |
-        mkdir -p .$HOME/.gradle
-        echo "${{secrets.OSSRH_GPG_SECRET_KEY}}" > $HOME/.gradle/secring.gpg.b64
+        echo "plain multiline secret"
+        echo "${{secrets.TEST_SECRET_MULTILINE}}"
+        echo "multiline secret base 64"
+        echo "${{secrets.TEST_SECRET_MULTILINE_B64}}"
+        echo "decoded multiline secret"
+        mkdir -p $HOME/.gradle
+        echo "${{secrets.TEST_SECRET_MULTILINE_B64}}" > $HOME/.gradle/secring.gpg.b64
         base64 -d $HOME/.gradle/secring.gpg.b64 > $HOME/.gradle/secring.gpg
-
-    - name: Publish Library
-      run: |
-        echo "Publishing aar package..."
-        ./android/gradlew -p ./android :ramses-aar:publish -Psigning.keyId=${{secrets.SIGNING_KEY_ID}} -Psigning.password=${{ secrets.OSSRH_PASSWORD }} -Psigning.secretKeyRingFile=$HOME/.gradle/secring.gpg --no-daemon --no-parallel
-        echo "Releasing aar package..."
-        ./android/gradlew -p ./android closeAndReleaseRepository
-      env:
-        ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
-        ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_PASSWORD }}
-        OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-        OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+        echo "print secring"
+        cat $HOME/.gradle/secring.gpg
+        echo "print finished"
 
