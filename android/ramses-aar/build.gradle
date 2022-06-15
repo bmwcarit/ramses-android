@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         // at least sdk version 24 is needed because of Completable Future feature support; SDK 18+ is needed because of OpenGL ES 3.0+
-        minSdkVersion 24
+        minSdkVersion 29
         targetSdkVersion 29
 
         ndk {
@@ -104,6 +104,8 @@ preBuild.doFirst {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "androidx.lifecycle:lifecycle-viewmodel:2.4.1"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.1"
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
