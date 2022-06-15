@@ -48,4 +48,5 @@ dependencies {
     androidTestImplementation "androidx.test:rules:$test_rules_version"
     androidTestImplementation "junit:junit:$junit_version"
     androidTestImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
 }
