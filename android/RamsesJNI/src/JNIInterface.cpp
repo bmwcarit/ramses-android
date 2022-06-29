@@ -101,10 +101,11 @@ Java_com_bmwgroup_ramses_RamsesBundle_createRamsesBundle(JNIEnv* /*env*/, jobjec
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_bmwgroup_ramses_RamsesBundle_createDisplay(JNIEnv* env, jobject /*instance*/, jlong handle, jobject surface, jfloat red, jfloat green, jfloat blue, jfloat alpha) {
+Java_com_bmwgroup_ramses_RamsesBundle_createDisplay(JNIEnv* env, jobject /*instance*/, jlong handle, jobject surface, jfloat red, jfloat green, jfloat blue, jfloat alpha, jint msaaSamples) {
     ANativeWindow* nativeWindowHandle = ANativeWindow_fromSurface(env, surface);
     auto* ramsesBundle = reinterpret_cast<ramses_bundle::RamsesBundle*>(handle);
-    return ramsesBundle->createDisplay(nativeWindowHandle, {red, green, blue, alpha});
+    assert(msaaSamples >= 1);
+    return ramsesBundle->createDisplay(nativeWindowHandle, {red, green, blue, alpha}, uint32_t(msaaSamples));
 }
 
 JNIEXPORT jboolean JNICALL

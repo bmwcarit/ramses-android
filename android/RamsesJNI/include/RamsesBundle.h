@@ -36,7 +36,7 @@ namespace ramses_bundle
         RamsesBundle();
 
         //display and renderer management
-        bool createDisplay(ANativeWindow* nativeWindow, const rlogic::vec4f& clearColor);
+        bool createDisplay(ANativeWindow* nativeWindow, const rlogic::vec4f& clearColor, uint32_t msaaSamples);
         bool destroyDisplay();
         void resizeDisplay(int width, int height);
         bool setMaximumFramerate(float maximumFramerate);

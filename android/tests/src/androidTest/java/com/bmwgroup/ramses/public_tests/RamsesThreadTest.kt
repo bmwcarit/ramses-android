@@ -164,6 +164,25 @@ class RamsesThreadTest {
     }
 
     @Test
+    fun ramsesThread_initRamsesThreadAndLoadSceneSuccessfullyLoadsSceneFromFileDescriptors() {
+        assertFalse(testThread.isAlive)
+
+        val assetManager = getInstrumentation().context.resources.assets
+        val fdRamses = assetManager.openFd("testScene.ramses")
+        val fdRlogic = assetManager.openFd("testLogic.rlogic")
+
+        testThread.initRamsesThreadAndLoadScene(
+            fdRamses.parcelFileDescriptor, fdRamses.startOffset, fdRlogic.parcelFileDescriptor, fdRlogic.startOffset
+        )
+
+        val state = testThread.m_futureAfterSceneLoad.get()
+        assertTrue(testThread.isAlive)
+        assertTrue(state.isSceneLoaded)
+        assertFalse(state.isUpdateLoopRunning)
+        assertEquals(state.onSceneLoadedState, SceneState.LoadedSuccessfully)
+    }
+
+    @Test
     fun ramsesThread_initRamsesThreadAndLoadSceneFailsLoadingScene() {
         testThread.initRamsesThreadAndLoadScene(
             getInstrumentation().context.resources.assets,
@@ -176,6 +195,61 @@ class RamsesThreadTest {
         assertFalse(state.isSceneLoaded)
         assertFalse(state.isUpdateLoopRunning)
         assertEquals(state.onSceneLoadedState, SceneState.LoadingFailed)
+    }
+
+    @Test
+    fun ramsesThread_initRamsesThreadAndLoadSceneFailsLoadingSceneFromFileDescriptor() {
+        val assetManager = getInstrumentation().context.resources.assets
+        val fdRamses = assetManager.openFd("testScene_invalid.ramses")
+        val fdRlogic = assetManager.openFd("testLogic.rlogic")
+
+        testThread.initRamsesThreadAndLoadScene(
+            fdRamses.parcelFileDescriptor, fdRamses.startOffset, fdRlogic.parcelFileDescriptor, fdRlogic.startOffset
+        )
+
+        val state = testThread.m_futureAfterSceneLoad.get()
+        assertTrue(testThread.isAlive)
+        assertFalse(state.isSceneLoaded)
+        assertFalse(state.isUpdateLoopRunning)
+        assertEquals(state.onSceneLoadedState, SceneState.LoadingFailed)
+    }
+
+    @Test
+    fun ramsesThread_createsDisplayWithMSAAEnabled() {
+        testThread.initRamsesThreadAndLoadScene(
+            getInstrumentation().context.resources.assets,
+            "testScene.ramses",
+            "testLogic.rlogic"
+        )
+        assertTrue(testThread.m_futureAfterSceneLoad.get().isSceneLoaded)
+
+        val surfaceTexture1 = SurfaceTexture(1)
+        val surface1 = Surface(surfaceTexture1)
+        // MSAA is very device dependent unfortunately, so can't test with a non-trivial set of
+        // samples... Still, testing that using the overload with MSAA=1 works
+        testThread.createDisplayAndShowScene(
+            surface1, ClearColor(0F, 0F, 0F, 1F), 1
+        )
+        assertTrue(testThread.isDisplayCreatedThreadSafe())
+    }
+
+    @Test
+    fun ramsesThread_throwsExceptionWhenDisplayCreatedWithInvalidMSAASize() {
+        testThread.initRamsesThreadAndLoadScene(
+            getInstrumentation().context.resources.assets,
+            "testScene.ramses",
+            "testLogic.rlogic"
+        )
+        assertTrue(testThread.m_futureAfterSceneLoad.get().isSceneLoaded)
+
+        val surfaceTexture1 = SurfaceTexture(1)
+        val surface1 = Surface(surfaceTexture1)
+        assertFailsWith<IllegalArgumentException> {
+            testThread.createDisplayAndShowScene(
+                surface1, ClearColor(0F, 0F, 0F, 1F), 13
+            )
+        }
+        assertFalse(testThread.isDisplayCreatedThreadSafe())
     }
 
     @Test
@@ -284,7 +358,6 @@ class RamsesThreadTest {
 
         assertTrue(testThread.m_futureOnUpdate.get())
     }
-
 
     @Test
     fun ramsesThread_onLogicUpdatedCalled() {
