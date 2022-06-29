@@ -6,58 +6,54 @@ import android.view.Surface
 import androidx.lifecycle.AndroidViewModel
 import com.bmwgroup.ramses.RamsesThread
 
-class AssetViewModel(val context: Application) : AndroidViewModel(context) {
+open class AssetViewModel(val context: Application, val ramsesFileName: String, val rlogicFileName: String) : AndroidViewModel(context) {
 
     companion object {
         const val LOGGING_TAG = "AssetViewModel"
     }
 
+    var mRamsesCallback: RamsesCallback? = null
+
     fun initRamses() {
-        //TODO implement what is in onViewCreated
+        ramsesThreadImpl.initRamsesThreadAndLoadScene(context.assets, ramsesFileName, rlogicFileName)
     }
 
     fun tearDownRamses() {
-        //TODO implement what is in onDestroyView
+        try {
+            ramsesThreadImpl.destroyRamsesBundleAndQuitThread()
+        } catch (e: InterruptedException) {
+            e.printStackTrace()
+        }
     }
-
-
-    // Overwrite these with your asset logic
-    fun onUpdateDelegate() {}
-    fun onSceneLoadedDelegate() {}
-    fun onDisplayResizeDelegate() {}
-    fun onSceneLoadedFailedDelegate() {}
-    fun onLogicUpdatedDelegate() {}
 
     val ramsesThreadImpl = object : RamsesThread("RamsesThreadImpl", context) {
         override fun onUpdate() {
-            onUpdateDelegate()
+            mRamsesCallback?.onUpdate()
         }
 
         override fun onDisplayResize(width: Int, height: Int) {
-            onDisplayResizeDelegate()
+            mRamsesCallback?.onDisplayResize(width, height)
         }
 
         override fun onSceneLoaded() {
-            onSceneLoadedDelegate()
+            mRamsesCallback?.onSceneLoaded()
         }
 
         override fun onSceneLoadFailed() {
-            onSceneLoadedFailedDelegate()
+            mRamsesCallback?.onSceneLoadedFailed()
         }
 
         override fun onLogicUpdated() {
-            onLogicUpdatedDelegate()
+            mRamsesCallback?.onLogicUpdated()
         }
     }
 
-    //TODO check if good code
     var onSurfaceCreatedDelegate = { surface: Surface ->
         try {
-            ramsesThreadImpl?.createDisplayAndShowScene(surface, null)
+            ramsesThreadImpl.createDisplayAndShowScene(surface, null)
             // Setting the framerate to 30 as every frame properties are updated in onUpdate and the default of 60 would do unnecessary work
             // Setting it directly after creating the display will make sure that it will be applied for the lifetime of the display
-            ramsesThreadImpl?.renderingFramerate = 30.0f
-            //onViewCreated()
+            ramsesThreadImpl.renderingFramerate = 30.0f
         } catch (e: InterruptedException) {
             e.printStackTrace()
         }
@@ -65,10 +61,8 @@ class AssetViewModel(val context: Application) : AndroidViewModel(context) {
 
     var onSurfaceDestroyedDelegate = {
         try {
-            if (ramsesThreadImpl != null && ramsesThreadImpl!!.isAlive) {
-                ramsesThreadImpl?.destroyDisplay()
-//                stopRendering()
-//                destroyRendering()
+            if (ramsesThreadImpl.isAlive) {
+                ramsesThreadImpl.destroyDisplay()
             }
         } catch (e: InterruptedException) {
             e.printStackTrace()
