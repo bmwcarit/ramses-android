@@ -114,7 +114,7 @@ afterEvaluate {
                 from(components.release)
                 artifactId 'ramses-aar'
                 groupId 'io.github.bmwcarit'
-                version '1.0.0'
+                version '1.0.1'
 
                 pom {
                     description = "Low-level rendering engine for Android"
