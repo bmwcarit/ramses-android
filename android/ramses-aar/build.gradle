@@ -22,7 +22,7 @@ android {
         targetSdkVersion 29
 
         ndk {
-            abiFilters 'x86_64', 'arm64-v8a' //other options: 'x86', 'arm64-v8a', 'armeabi-v7a'
+            abiFilters 'x86_64', 'arm64-v8a', 'armeabi-v7a' //other options: 'x86', 'arm64-v8a'
         }
 
         externalNativeBuild {

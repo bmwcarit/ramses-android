@@ -28,7 +28,7 @@ static jmethodID jBooleanConstructor;
 static_assert(sizeof(jint)== sizeof(int));
 static_assert(sizeof(jfloat)== sizeof(float));
 static_assert(sizeof(jboolean)== sizeof(bool));
-static_assert(sizeof(jlong)== sizeof(void*));
+static_assert(sizeof(jlong) >= sizeof(void*));
 static_assert(sizeof(jsize)== sizeof(int));
 static_assert(sizeof(jlong)== sizeof(int64_t));
 
