@@ -16,6 +16,7 @@ import android.view.Surface;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * This class bundles ramses scene and ramses logic engine. This enables the user to have a single
@@ -77,11 +78,25 @@ public class RamsesBundle
     /**
      * Creates a ramses display
      * @param surface the Android surface used to create a ramses display
+     * @param clearColor the color with which the display will be cleared (default is 0, 0, 0, 0)
      * @return if the display creation was successful
      */
     public boolean createDisplay(Surface surface, @Nullable ClearColor clearColor) {
         ClearColor color = (clearColor != null) ? clearColor : new ClearColor(0.f, 0.f, 0.f, 0.f);
-        return createDisplay(m_nativeHandle, surface, color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
+        return createDisplay(m_nativeHandle, surface, color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha(), 1);
+    }
+
+    /**
+     * Creates a ramses display
+     * @param surface the Android surface used to create a ramses display
+     * @param clearColor the color with which the display will be cleared (default is 0, 0, 0, 0)
+     * @param msaaSamples the number of MSAA samples to use (can be 1, 2, 4, 8) where 1 is a special value which disables MSAA
+     * @return if the display creation was successful
+     */
+    public boolean createDisplay(Surface surface, @Nullable ClearColor clearColor, int msaaSamples) {
+        ClearColor color = (clearColor != null) ? clearColor : new ClearColor(0.f, 0.f, 0.f, 0.f);
+        ensureMsaaSampleCountValid(msaaSamples, "RamsesBundle.createDisplay()");
+        return createDisplay(m_nativeHandle, surface, color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha(), msaaSamples);
     }
 
     /**
@@ -310,6 +325,12 @@ public class RamsesBundle
         return flushRamsesScene(m_nativeHandle);
     }
 
+    static void ensureMsaaSampleCountValid(int sampleCount, String logText) {
+        if (!Arrays.asList(1, 2, 4, 8).contains(sampleCount)) {
+            throw new IllegalArgumentException(logText + " is executed with invalid msaa count " + sampleCount);
+        }
+    }
+
     /**
      * Provides info whether the java object can be garbage collected as all the underlying c++ objects have been disposed and thus any memory leaks are prevented.
      * @return whether native c++ objects have been disposed
@@ -345,7 +366,7 @@ public class RamsesBundle
     private boolean m_sceneLoaded = false;
 
     private native long createRamsesBundle();
-    private native boolean createDisplay(long handle, Surface surface, float red, float green, float blue, float alpha);
+    private native boolean createDisplay(long handle, Surface surface, float red, float green, float blue, float alpha, int msaaSamples);
     private native boolean destroyDisplay(long handle);
     private native int[] getDisplaySize(long handle);
     private native void resizeDisplay(long handle, int width, int height);

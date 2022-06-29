@@ -14,9 +14,11 @@ import android.content.res.AssetManager;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.Surface;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -90,6 +92,97 @@ public abstract class RamsesThread {
         m_ramsesBundle.flushRamsesScene();
     }
 
+    private void initRamsesThread() {
+        if (m_workerThread == null) {
+            m_workerThread = new HandlerThread(m_threadName);
+            m_workerThread.start();
+        } else {
+            throw new IllegalThreadStateException("Calling initRamsesThreadAndLoadScene() on an object that is already initialized.");
+        }
+        // getLooper blocks until looper is initialized
+        m_ramsesThreadHandler = new Handler(m_workerThread.getLooper());
+    }
+
+    private void loadSceneFromFileDescriptor(final ParcelFileDescriptor fdRamses, final long offsetRamses, final ParcelFileDescriptor fdRlogic, final long offsetRlogic,
+                                             final String logText) {
+        // Explicitly wait for resumed and focused state before rendering anything
+        m_ramsesThreadHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                Log.i(m_threadName, "initRamsesThreadAndLoadScene: loading scene from " + logText);
+
+                /*
+                 * Creates a RamsesBundle instance which holds all low-level Ramses
+                 * objects needed to render and manage a scene.
+                 */
+                m_ramsesBundle = new RamsesBundle(m_context);
+
+                // start update loop to process scene loading callbacks
+                startUpdateLoop();
+
+                /*
+                 * Only I/O exception gets caught here loading the scene from file.
+                 * When using the scene object later it has to be checked that the scene is not null.
+                 */
+                try {
+                    //Loads and publishes Ramses scene from file descriptors and loads logic content.
+                    m_sceneLoaded = m_ramsesBundle.loadScene(fdRamses, offsetRamses, fdRlogic, offsetRlogic);
+                } catch (IOException e) {
+                    Log.e(m_threadName, "initRamsesThreadAndLoadScene: IOException occurred while loading scene from " + logText, e);
+                }
+
+                if (m_sceneLoaded) {
+                    Log.i(m_threadName, "initRamsesThreadAndLoadScene: Scene has been loaded successfully from " + logText);
+                    try {
+                        onSceneLoaded();
+                    } catch (Exception e) {
+                        Log.e(m_threadName, "initRamsesThreadAndLoadScene: The function onSceneLoaded threw an " +
+                                e.getCause() + "Look at stacktrace for further info: ", e);
+                    }
+                } else {
+                    m_ramsesBundle.dispose();
+                    m_ramsesBundle = null;
+
+                    Log.e(m_threadName, "initRamsesThreadAndLoadScene: Scene loading from " + logText + " failed!");
+                    try {
+                        onSceneLoadFailed();
+                    } catch (Exception e) {
+                        Log.e(m_threadName, "initRamsesThreadAndLoadScene: The function onSceneLoadFailed threw an " +
+                                e.getCause() + "Look at stacktrace for further info: ", e);
+                    }
+                }
+                m_updateLoopRunning = false; // stop update loop until it's started with rendering
+            }
+        });
+    }
+
+    /**
+     * This function sets up the RamsesThread.
+     * <p>
+     * That includes:
+     * <ul>
+     * <li>Creating a RamsesBundle</li>
+     * <li>Loading ramses scene and logic from given File Descriptors</li>
+     * <li>Calling the RamsesThreads onSceneLoaded or onSceneLoadFailed callbacks depending on the loading success</li>
+     * </ul>
+     * This method initializes the RamsesThread so don't queue it to RamsesThread with addRunnableToThreadQueue
+     * <p>
+     * It is typically called in the activities onCreate or fragments onViewCreated Callback to set up.
+     * If initialization fails for some reason, C++ resources will be automatically cleaned up, but Android thread will keep running.
+     * In order to reinitialize RamsesThread after failed or successful initialization,
+     * the object first must be cleaned-up with destroyRamsesBundleAndQuitThread().
+     * </p>
+     *
+     * @param fdRamses file descriptor of ramses scene; cannot be null
+     * @param offsetRamses offset of ramses scene file descriptor
+     * @param fdRlogic file descriptor of ramses logic engine
+     * @param offsetRlogic offset of ramses logic engine file descriptor
+     */
+    public void initRamsesThreadAndLoadScene(@NotNull final ParcelFileDescriptor fdRamses, final long offsetRamses, final ParcelFileDescriptor fdRlogic, final long offsetRlogic) {
+        initRamsesThread();
+        loadSceneFromFileDescriptor(fdRamses, offsetRamses, fdRlogic, offsetRlogic, "File Descriptors");
+    }
+
     /**
      * This function sets up the RamsesThread.
      * <p>
@@ -112,58 +205,25 @@ public abstract class RamsesThread {
      * @param logicFileName  the file name of the ramses logic that should be loaded
      */
     public void initRamsesThreadAndLoadScene(final AssetManager assetManager, final String ramsesFileName, final String logicFileName) {
-        if (m_workerThread == null) {
-            m_workerThread = new HandlerThread(m_threadName);
-            m_workerThread.start();
-        } else {
-            throw new IllegalThreadStateException("Calling initRamsesThreadAndLoadScene() on an object that is already initialized.");
+
+        initRamsesThread();
+
+        AssetFileDescriptor fdRamses = null;
+        AssetFileDescriptor fdRlogic = null;
+
+        try {
+            fdRamses = assetManager.openFd(ramsesFileName);
+            fdRlogic = assetManager.openFd(logicFileName);
+        } catch (IOException e) {
+            Log.e(m_threadName, "initRamsesThreadAndLoadScene: IOException occurred while opening assets " + ramsesFileName + ", " + logicFileName, e);
         }
-        // getLooper blocks until looper is initialized
-        m_ramsesThreadHandler = new Handler(m_workerThread.getLooper());
 
-        // Explicitly wait for resumed and focused state before rendering anything
-        m_ramsesThreadHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                Log.i(m_threadName, "initRamsesThreadAndLoadScene: loading scene from files " + ramsesFileName + ", " + logicFileName);
-
-                /*
-                 * Creates a RamsesBundle instance which holds all low-level Ramses
-                 * objects needed to render and manage a scene.
-                 */
-                m_ramsesBundle = new RamsesBundle(m_context);
-
-                // start update loop to process scene loading callbacks
-                startUpdateLoop();
-
-                /*
-                 * Only I/O exception gets caught here loading the scene from file.
-                 * When using the scene object later it has to be checked that the scene is not null.
-                 */
-                try {
-                    AssetFileDescriptor fdRamses = assetManager.openFd(ramsesFileName);
-                    AssetFileDescriptor fdRlogic = assetManager.openFd(logicFileName);
-
-                    //Loads and publishes Ramses scene from file descriptors and loads logic content.
-                    m_sceneLoaded = m_ramsesBundle.loadScene(fdRamses.getParcelFileDescriptor(), fdRamses.getStartOffset(),
-                            fdRlogic.getParcelFileDescriptor(), fdRlogic.getStartOffset());
-                } catch (IOException e) {
-                    Log.e(m_threadName, "initRamsesThreadAndLoadScene: IOException occurred while loading scene from files " + ramsesFileName + ", " + logicFileName, e);
-                }
-
-                if (m_sceneLoaded) {
-                    Log.i(m_threadName, "initRamsesThreadAndLoadScene: Scene has been loaded successfully from files " + ramsesFileName + ", " + logicFileName);
-                    try {
-                        onSceneLoaded();
-                    } catch (Exception e) {
-                        Log.e(m_threadName, "initRamsesThreadAndLoadScene: The function onSceneLoaded threw an " +
-                                e.getCause() + "Look at stacktrace for further info: ", e);
-                    }
-                } else {
-                    m_ramsesBundle.dispose();
-                    m_ramsesBundle = null;
-
-                    Log.e(m_threadName, "initRamsesThreadAndLoadScene: Scene loading from files " + ramsesFileName + ", " + logicFileName + " failed!");
+        //Keep RamsesThread behavior intact, that onSceneLoadFailed is called when loading scene fails
+        if (fdRamses == null || fdRlogic == null)
+        {
+            m_ramsesThreadHandler.post(new Runnable() {
+                @Override
+                public void run() {
                     try {
                         onSceneLoadFailed();
                     } catch (Exception e) {
@@ -171,9 +231,11 @@ public abstract class RamsesThread {
                                 e.getCause() + "Look at stacktrace for further info: ", e);
                     }
                 }
-                m_updateLoopRunning = false; // stop update loop until it's started with rendering
-            }
-        });
+            });
+        } else {
+            loadSceneFromFileDescriptor(fdRamses.getParcelFileDescriptor(), fdRamses.getStartOffset(), fdRlogic.getParcelFileDescriptor(), fdRlogic.getStartOffset(),
+                    ramsesFileName + ", " + logicFileName);
+        }
     }
 
     private void startUpdateLoop() {
@@ -237,15 +299,34 @@ public abstract class RamsesThread {
      * <p>
      * It is typically called in the SurfaceViews onSurfaceCreated or in the TextureViews onSurfaceTextureAvailable callback.
      *
-     * @param surface    the surface that should get the ramses scene assigned
-     * @param clearColor Clear color of the created Ramses Display. The default value for the clear color is black without alpha.
+     * @param surface       the surface that should get the ramses scene assigned
+     * @param clearColor    Clear color of the created Ramses Display. The default value for the clear color is black without alpha.
      * @throws InterruptedException        if the caller thread gets interrupted while blocking on this method
      * @throws IllegalStateException       if called twice without destroying the display first with call to destroyDisplay
      * @throws IllegalThreadStateException if called on ramses thread
      */
     public void createDisplayAndShowScene(final Surface surface, @Nullable final ClearColor clearColor) throws InterruptedException, IllegalStateException {
+        createDisplayAndShowSceneInternal(surface, clearColor, 1);
+    }
+
+    /**
+     * This is an overload of createDisplayAndShowScene(surface, clearColor) which also accepts a MSAA sample count
+     *
+     * @param surface       the surface that should get the ramses scene assigned
+     * @param clearColor    Clear color of the created Ramses Display. The default value for the clear color is black without alpha.
+     * @param msaaSamples   MSAA sample count for the created Ramses Display. The default value is '1' i.e. disabled
+     * @throws InterruptedException        if the caller thread gets interrupted while blocking on this method
+     * @throws IllegalStateException       if called twice without destroying the display first with call to destroyDisplay
+     * @throws IllegalThreadStateException if called on ramses thread
+     */
+    public void createDisplayAndShowScene(final Surface surface, @Nullable final ClearColor clearColor, int msaaSamples) throws InterruptedException, IllegalStateException {
+        createDisplayAndShowSceneInternal(surface, clearColor, msaaSamples);
+    }
+
+    private void createDisplayAndShowSceneInternal(final Surface surface, @Nullable final ClearColor clearColor, int msaaSamples) throws InterruptedException, IllegalStateException {
         ensureRamsesThreadAlive("createDisplayAndShowScene");
         ensureNotRunningInRamsesThread("createDisplayAndShowScene");
+        RamsesBundle.ensureMsaaSampleCountValid(msaaSamples, "RamsesThread.createDisplayAndShowSceneInternal()");
 
         final CompletableFuture<Boolean> futureWindowInitialized = new CompletableFuture<>();
         m_ramsesThreadHandler.post(new Runnable() {
@@ -254,7 +335,8 @@ public abstract class RamsesThread {
                 Log.i(m_threadName, "createDisplayAndShowScene: creating display");
                 ensureRamsesBundleCreated("createDisplayAndShowScene");
 
-                boolean success = m_ramsesBundle.createDisplay(surface, clearColor);
+                boolean success = m_ramsesBundle.createDisplay(surface, clearColor, msaaSamples);
+
                 if (success) {
                     int[] displaySize = m_ramsesBundle.getDisplaySize();
                     if (displaySize == null) {
@@ -279,7 +361,8 @@ public abstract class RamsesThread {
         });
         try {
             if (!futureWindowInitialized.get()) {
-                throw new IllegalStateException("createDisplayAndShowScene: trying to create display that is already created!");
+                throw new IllegalStateException("createDisplayAndShowScene: " +
+                        "Display creation failed! Please look at the logs for further information");
             }
         } catch (ExecutionException e) {
             // This should never happen, as there is no "completeExceptionally" call on the future

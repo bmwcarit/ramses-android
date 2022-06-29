@@ -32,12 +32,11 @@ namespace ramses_bundle
     RamsesBundle::RamsesBundle()
     {
         ramses::RamsesFrameworkConfig frameworkConfig;
-        frameworkConfig.setPeriodicLogsEnabled(false);
         m_framework.reset(new ramses::RamsesFramework(frameworkConfig));
         m_client = m_framework->createClient("client-scene-reader");
     }
 
-    bool RamsesBundle::createDisplay(ANativeWindow* nativeWindow, const rlogic::vec4f& clearColor)
+    bool RamsesBundle::createDisplay(ANativeWindow* nativeWindow, const rlogic::vec4f& clearColor, uint32_t msaaSamples)
     {
         /**
          * Should never create display when already created
@@ -61,6 +60,8 @@ namespace ramses_bundle
         displayConfig.setAndroidNativeWindow(nativeWindow);
         displayConfig.setClearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
         __android_log_print(ANDROID_LOG_DEBUG, "RamsesNativeInterface", "Clear Color set to: %.1f %.1f %.1f %.1f", m_clearColor[0], m_clearColor[1], m_clearColor[2], m_clearColor[3]);
+        displayConfig.setMultiSampling(msaaSamples);
+        __android_log_print(ANDROID_LOG_DEBUG, "RamsesNativeInterface", "MSAA set to: %d", msaaSamples);
         m_displayId = m_renderer->createDisplay(displayConfig);
         m_renderer->flush();
 
@@ -108,6 +109,7 @@ namespace ramses_bundle
             __android_log_print(ANDROID_LOG_ERROR, "RamsesNativeInterface", "setMaximumFramerate failed!");
             return false;
         }
+        m_renderer->flush();
         return true;
     }
 
