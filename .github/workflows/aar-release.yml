@@ -36,8 +36,10 @@ jobs:
 
     - name: Publish Library
       run: |
+        set -x
         echo "Publishing aar package..."
-        echo "Signing key id: $SIGNING_KEY_ID"
+        echo "Signing key id 1: $SIGNING_KEY_ID"
+        echo "Signing key id 2: ${{ secrets.SIGNING_KEY_ID }}"
         ./android/gradlew -p ./android :ramses-aar:publish -Psigning.keyId=${{ secrets.SIGNING_KEY_ID }} -Psigning.password=${{ secrets.OSSRH_PASSWORD }} -Psigning.secretKeyRingFile=secring.gpg --no-daemon --no-parallel
         echo "Releasing aar package..."
         ./android/gradlew -p ./android closeAndReleaseRepository
