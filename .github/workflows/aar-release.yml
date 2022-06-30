@@ -2,8 +2,9 @@ name: Build and publish AAR to Maven Central
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
   gradle:
@@ -26,9 +27,12 @@ jobs:
 
     - name: Prepare GPG key
       run: |
+        set -x
+        pwd
+        cd ${{runner.workspace}}/android/ramses-aar
+        pwd
         echo "${{secrets.OSSRH_GPG_SECRET_KEY}}" > secring.gpg.b64
         base64 -d secring.gpg.b64 > secring.gpg
-      working-directory: ${{runner.workspace}}/android/ramses-aar
 
     - name: Publish Library
       run: |
