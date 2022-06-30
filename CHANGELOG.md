@@ -12,6 +12,7 @@
 
 * Minor documentation issues
 * Ramses periodic logs are enabled by default to allow easy profiling
+* Added support for x86_64 ABI
 
 ## Version 1.0.0
 

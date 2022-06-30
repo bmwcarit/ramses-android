@@ -24,17 +24,17 @@ jobs:
     - name: Execute Gradle build
       run: ./android/gradlew -p ./android :ramses-aar:build
 
-    - name: Decode
+    - name: Prepare GPG key
       run: |
-        mkdir -p .$HOME/.gradle
-        echo "${{secrets.OSSRH_GPG_SECRET_KEY}}" > ./android/ranses-aar/secring.gpg.b64
-        base64 -d ./android/ranses-aar/secring.gpg.b64 > $./android/ranses-aar/secring.gpg
+        echo "${{secrets.OSSRH_GPG_SECRET_KEY}}" > secring.gpg.b64
+        base64 -d secring.gpg.b64 > secring.gpg
+      working-directory: ${{runner.workspace}}/android/ramses-aar
 
     - name: Publish Library
       run: |
         echo "Publishing aar package..."
         echo "Signing key id: $SIGNING_KEY_ID"
-        ./android/gradlew -p ./android :ramses-aar:publish -Psigning.keyId=$SIGNING_KEY_ID -Psigning.password=$OSSRH_PASSWORD -Psigning.secretKeyRingFile=secring.gpg --no-daemon --no-parallel
+        ./android/gradlew -p ./android :ramses-aar:publish -Psigning.keyId=${{ secrets.SIGNING_KEY_ID }} -Psigning.password=${{ secrets.OSSRH_PASSWORD }} -Psigning.secretKeyRingFile=secring.gpg --no-daemon --no-parallel
         echo "Releasing aar package..."
         ./android/gradlew -p ./android closeAndReleaseRepository
       env:
