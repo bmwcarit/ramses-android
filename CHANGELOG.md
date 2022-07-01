@@ -1,5 +1,18 @@
 # Ramses AAR CHANGELOG
 
+
+## Version 1.0.2
+
+**FIXED**
+
+* Added support for x86 ABI
+* RamsesThread consumes renderer events and doesn't report warnings any more
+    * If you are using RamsesBundle, call RamsesBundle::dispatchRendererEvents() every frame to also suppress the warning
+
+**ADDED**
+
+* Added new method RamsesBundle::dispatchRendererEvents (see the FIXED section for details)
+
 ## Version 1.0.1
 
 **ADDED**

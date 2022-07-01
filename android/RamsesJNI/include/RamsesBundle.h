@@ -50,6 +50,7 @@ namespace ramses_bundle
         bool loadSceneLogic(const void* rlogicBuffer, size_t bufferSize);
         bool updateLogic();
         bool flushRamsesScene();
+        bool dispatchRendererEvents();
         bool loadScene(int fdRamses, long offset, long fdSize,
                        const void* rlogicBuffer, size_t bufferSize);
         bool showScene();

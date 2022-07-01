@@ -93,7 +93,7 @@ namespace ramses_bundle
     void RamsesBundle::resizeDisplay(int width, int height)
     {
         //TODO Violin/Vaclav add feature in ramses to tell it when an externally owned native window had its surface size resized (currently not possible without recreating the display)
-        __android_log_print(ANDROID_LOG_WARN, "RamsesNativeInterface", "Window resize event received (%d, %d) but not implemented yet in RamsesBundle!", width, height);
+        __android_log_print(ANDROID_LOG_INFO, "RamsesNativeInterface", "Window resize event received (%d, %d) but not implemented yet in RamsesBundle!", width, height);
     }
 
     bool RamsesBundle::setMaximumFramerate(float maximumFramerate) {
@@ -206,6 +206,17 @@ namespace ramses_bundle
             return false;
         }
         return m_ramsesScene->flush() == ramses::StatusOK;
+    }
+
+    bool RamsesBundle::dispatchRendererEvents()
+    {
+        if (!m_renderer)
+        {
+            __android_log_print(ANDROID_LOG_ERROR, "RamsesNativeInterface", "dispatchRendererEvents failed! Can't call before renderer and display are created!");
+            return false;
+        }
+        ramses::RendererEventHandlerEmpty dummyHandler;
+        return m_renderer->dispatchEvents(dummyHandler) == ramses::StatusOK;
     }
 
     bool RamsesBundle::showScene()

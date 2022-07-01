@@ -282,6 +282,12 @@ Java_com_bmwgroup_ramses_RamsesBundle_flushRamsesScene(JNIEnv* /*env*/, jobject 
     return ramsesBundle->flushRamsesScene();
 }
 
+JNIEXPORT jboolean JNICALL
+Java_com_bmwgroup_ramses_RamsesBundle_dispatchRendererEvents(JNIEnv* /*env*/, jobject /*instance*/, jlong handle) {
+    auto* ramsesBundle = reinterpret_cast<ramses_bundle::RamsesBundle*>(handle);
+    return ramsesBundle->dispatchRendererEvents();
+}
+
 JNIEXPORT void JNICALL
 Java_com_bmwgroup_ramses_RamsesBundle_dispose(JNIEnv* /*env*/, jobject /*instance*/, jlong handle) {
     auto* ramsesBundle = reinterpret_cast<ramses_bundle::RamsesBundle*>(handle);

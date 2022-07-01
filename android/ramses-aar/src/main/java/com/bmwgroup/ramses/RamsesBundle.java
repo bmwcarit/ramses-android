@@ -325,6 +325,14 @@ public class RamsesBundle
         return flushRamsesScene(m_nativeHandle);
     }
 
+    /**
+     * Empties the renderer event queue of ramses. This should be called regularly
+     * to ensure the queue doesn't overflow.
+     */
+    public boolean dispatchRendererEvents() {
+        return dispatchRendererEvents(m_nativeHandle);
+    }
+
     static void ensureMsaaSampleCountValid(int sampleCount, String logText) {
         if (!Arrays.asList(1, 2, 4, 8).contains(sampleCount)) {
             throw new IllegalArgumentException(logText + " is executed with invalid msaa count " + sampleCount);
@@ -381,6 +389,7 @@ public class RamsesBundle
     private native boolean showScene(long handle);
     private native boolean updateLogic(long handle);
     private native boolean flushRamsesScene(long handle);
+    private native boolean dispatchRendererEvents(long handle);
     private native boolean linkProperties(long m_nativeHandle, long handleSource, long handleTarget);
     private native boolean unlinkProperties(long m_nativeHandle, long handleSource, long handleTarget);
     private native long getLogicNodeRootInput(long m_nativeHandle, String logicNodeName);

@@ -239,6 +239,19 @@ class RamsesBundleTest {
     }
 
     @Test
+    fun ramsesBundle_canDispatchRendererEvents() {
+        val ramsesBundle = RamsesBundleForProtectedMethods(null)
+        val surfaceTexture = SurfaceTexture(1)
+        val surface = Surface(surfaceTexture)
+        ramsesBundle.createDisplay(
+            surface, null
+        )
+        assertTrue(ramsesBundle.dispatchRendererEvents())
+        // Test also that it works with an empty event queue (second dispatch)
+        assertTrue(ramsesBundle.dispatchRendererEvents())
+    }
+
+    @Test
     fun ramsesBundle_getDisplaySizeReturnsNullIfNoDisplayCreated() {
         val ramsesBundle = RamsesBundleForProtectedMethods(null)
 

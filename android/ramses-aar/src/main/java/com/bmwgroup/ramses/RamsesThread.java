@@ -90,6 +90,13 @@ public abstract class RamsesThread {
          * by the logic engine.
          */
         m_ramsesBundle.flushRamsesScene();
+
+        /*
+         * Dispatch renderer events. Currently, no events are reported to user, but this is still needed
+         * to ensure the ramses event queue doesn't overflow.
+         */
+        m_ramsesBundle.dispatchRendererEvents();
+
     }
 
     private void initRamsesThread() {
