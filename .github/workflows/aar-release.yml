@@ -36,10 +36,4 @@ jobs:
         ./android/gradlew -p ./android :ramses-aar:publish -Psigning.keyId=${{ secrets.SIGNING_KEY_ID }} -Psigning.password=${{ secrets.OSSRH_PASSWORD }} -Psigning.secretKeyRingFile=secring.gpg --no-daemon --no-parallel
         echo "Releasing aar package..."
         ./android/gradlew -p ./android closeAndReleaseRepository
-      env:
-        ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.OSSRH_USERNAME }}
-        ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.OSSRH_PASSWORD }}
-        OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-        OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
-        SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
 

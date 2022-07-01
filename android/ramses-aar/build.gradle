@@ -145,8 +145,8 @@ afterEvaluate {
         repositories {
             maven {
                 credentials {
-                    username findProperty("ossrhUsername") ?: System.getenv("OSSRH_USERNAME")
-                    password findProperty("ossrhPassword") ?: System.getenv("OSSRH_PASSWORD")
+                    username findProperty("ossrhUsername")
+                    password findProperty("ossrhPassword")
                 }
 
                 url "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
