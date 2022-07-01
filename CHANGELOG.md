@@ -1,11 +1,5 @@
 # Ramses AAR CHANGELOG
 
-## Version 1.0.2
-
-**ADDED**
-
-* Added support for x86 ABI
-
 ## Version 1.0.1
 
 **ADDED**
