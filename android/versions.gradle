@@ -17,6 +17,7 @@ ext {
      */
     android_build_tools_version = '4.1.1'
     kotlin_version = '1.6.10'
+    lifecycle_version = '2.4.1'
 
     // app base
     appcompat_version = '1.2.0'

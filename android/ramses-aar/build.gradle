@@ -12,14 +12,14 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 29
+    compileSdkVersion 30
 
     ndkVersion "22.1.7171670"
 
     defaultConfig {
         // at least sdk version 24 is needed because of Completable Future feature support; SDK 18+ is needed because of OpenGL ES 3.0+
         minSdkVersion 24
-        targetSdkVersion 29
+        targetSdkVersion 30
 
         ndk {
             abiFilters 'x86_64', 'x86', 'arm64-v8a', 'armeabi-v7a'
@@ -105,6 +105,11 @@ preBuild.doFirst {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    //implementation "androidx.lifecycle:lifecycle-viewmodel:2.3.0"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.0"
+    implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
 }
 
 afterEvaluate {
