@@ -1,11 +1,36 @@
 # Ramses AAR CHANGELOG
 
+## Version 1.1.0
+
+**CHANGED**
+
+* New ramses logic (v1.1.1)
+* New ramses (27.0.122)
+
+**ADDED**
+
+* RamsesBundle.getFeatureLevel()
+    * Use this method to get the feature level of the currently loaded logic engine
+* RamsesBundle.getInterface() and RamsesThread.getInterface()
+    * Use these methods as replacement for *.getLogicNodeRootInput(), they will
+      return reliably a unique interface object, or null if such doesn't exist
+* Added new method overload RamsesBundle::createDisplay that accepts samples for MSAA antialiasing
+* Added new method overload RamsesThread::createDisplayAndShowScene that accepts samples for MSAA antialiasing
+* Added new method RamsesBundle::dispatchRendererEvents (see the FIXED section for details)
+
+**FIXED**
+
+* RamsesThread consumes renderer events and doesn't report warnings any more
+    * If you are using RamsesBundle, call RamsesBundle::dispatchRendererEvents() every frame to also suppress the warning
+* Fixed RamsesBundle::linkProperties(....) - used to unlink instead of link
+* RamsesBundle and RamsesThread don't spam error logs related to dispatchRendererEvents any more
+    * Used to issue the logs when no renderer/display were created
 
 ## Version 1.0.2
 
 **FIXED**
 
-* Added support for x86 ABI
+* Added support for X86 ABI
 * RamsesThread consumes renderer events and doesn't report warnings any more
     * If you are using RamsesBundle, call RamsesBundle::dispatchRendererEvents() every frame to also suppress the warning
 

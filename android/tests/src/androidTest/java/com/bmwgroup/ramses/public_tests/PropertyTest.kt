@@ -10,10 +10,8 @@ package com.bmwgroup.ramses.public_tests
 
 import com.bmwgroup.ramses.Property
 import com.bmwgroup.ramses.RamsesBundle
-
 import kotlin.math.ceil
 import kotlin.test.*
-
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation as getInstrumentation
 
 class PropertyTest {
@@ -42,7 +40,8 @@ class PropertyTest {
             )
         )
 
-        intfFloatInput = ramsesBundle.getLogicNodeRootInput("intf").getChild("struct").getChild("floatInput")
+        intfFloatInput =
+            ramsesBundle.getLogicNodeRootInput("intf").getChild("struct").getChild("floatInput")
         scriptInputs = ramsesBundle.getLogicNodeRootInput("script1")
         scriptOutputs = ramsesBundle.getLogicNodeRootOutput("script1")
     }
@@ -95,7 +94,7 @@ class PropertyTest {
         assertFailsWith<NoSuchElementException> { structInput.getChild(childCount) }
 
         val outputsChildCount = scriptOutputs.childCount
-        assertNotNull(scriptOutputs.getChild(outputsChildCount -1))
+        assertNotNull(scriptOutputs.getChild(outputsChildCount - 1))
         assertFailsWith<NoSuchElementException> { scriptOutputs.getChild(outputsChildCount) }
     }
 
@@ -162,7 +161,6 @@ class PropertyTest {
 
         ramsesBundle.dispose()
         assertTrue(ramsesBundle.nativeObjectDisposed())
-
 
         assertFailsWith<IllegalStateException> { propertyData1.set("test") }
 
@@ -372,7 +370,8 @@ class PropertyTest {
         assertTrue(ramsesBundle.flushRamsesScene())
 
         // Value with default state (progress == 0, keyframes = [1, 2]
-        val animationOutputValue = ramsesBundle.getLogicNodeRootOutput("animNode").getChild("channel")
+        val animationOutputValue =
+            ramsesBundle.getLogicNodeRootOutput("animNode").getChild("channel")
         assertNotNull(animationOutputValue)
         assertEquals(1.0f, animationOutputValue.float, 0.0f)
 
@@ -406,7 +405,7 @@ class PropertyTest {
 
         val nestedArrayProp = arrayInput.getChild(childCount - 1)
         assertNotNull(nestedArrayProp)
-        assertNull(nestedArrayProp.name);
+        assertNull(nestedArrayProp.name)
     }
 
     // TODO Daniel add test for islinked

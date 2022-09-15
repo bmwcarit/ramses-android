@@ -167,6 +167,23 @@ Java_com_bmwgroup_ramses_RamsesBundle_loadScene(JNIEnv* /*env*/, jobject /*insta
 }
 
 JNIEXPORT jlong JNICALL
+Java_com_bmwgroup_ramses_RamsesBundle_getFeatureLevel(JNIEnv* /*env*/, jobject /*instance*/, jlong handle) {
+    auto* ramsesBundle = reinterpret_cast<ramses_bundle::RamsesBundle*>(handle);
+    return static_cast<jlong>(ramsesBundle->getFeatureLevel());
+}
+
+JNIEXPORT jlong JNICALL
+Java_com_bmwgroup_ramses_RamsesBundle_getInterface(JNIEnv* env, jobject /*instance*/, jlong handle, jstring interfaceName) {
+    auto* ramsesBundle = reinterpret_cast<ramses_bundle::RamsesBundle*>(handle);
+
+    const char *ifaceName = env->GetStringUTFChars(interfaceName, 0);
+    rlogic::Property* property = ramsesBundle->getInterface(ifaceName);
+    env->ReleaseStringUTFChars(interfaceName, ifaceName);
+
+    return reinterpret_cast<jlong>(property);
+}
+
+JNIEXPORT jlong JNICALL
 Java_com_bmwgroup_ramses_RamsesBundle_getLogicNodeRootInput(JNIEnv* env, jobject /*instance*/, jlong handle, jstring logicNodeName) {
     auto* ramsesBundle = reinterpret_cast<ramses_bundle::RamsesBundle*>(handle);
 

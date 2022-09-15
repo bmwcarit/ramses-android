@@ -210,6 +210,15 @@ public class RamsesBundle
     }
 
     /**
+     * Get feature level of currently loaded logic engine
+     * @return feature level of logic engine, or 0 in case of an error
+     */
+    public long getFeatureLevel() {
+        ensureSceneLoaded("getFeatureLevel");
+        return getFeatureLevel(m_nativeHandle);
+    }
+
+    /**
      * Makes sure a scene is loaded to avoid calling functions that depend on it before the loaded state
      * @param callingFunctionName the name of the function calling ensureSceneLoaded
      * @throws IllegalStateException if scene isn't already loaded
@@ -226,9 +235,24 @@ public class RamsesBundle
     }
 
     /**
+     * Gets root input of an interface object with given name. This method will search exclusively
+     * for interfaces and will ignore any other logic node which might have the same name. It's the
+     * preferred way to obtain data from assets. Interfaces are guaranteed to have unique name
+     * other than any other logic node type.
+     * @param interfaceName the name of the interface of interest
+     * @return root input of given interface or null if the interface doesn't exist
+     */
+    public Property getInterface(String interfaceName) {
+        ensureSceneLoaded("getInterface");
+
+        long nativeRlogicHandle = getInterface(m_nativeHandle, interfaceName);
+        return (nativeRlogicHandle != 0) ? new Property(nativeRlogicHandle, this, false) : null;
+    }
+
+    /**
      * Gets root input of logic node with given name
      * @param logicNodeName the name of the logic node whose root input is of interest
-     * @return root input of given logic node name or null if the logic node doesn't exist
+     * @return root input of given logic node or null if the logic node doesn't exist
      */
     public Property getLogicNodeRootInput(String logicNodeName) {
         ensureSceneLoaded("getLogicNodeRootInput");
@@ -242,7 +266,7 @@ public class RamsesBundle
      * <p>
      * The property will be read only so all setters on it will throw an IllegalStateException.
      * @param logicNodeName the name of the logic node whose root output is of interest
-     * @return root output of given logic node name or null if the logic node doesn't exist
+     * @return root output of given logic node or null if the logic node doesn't exist
      */
     public Property getLogicNodeRootOutput(String logicNodeName) {
         ensureSceneLoaded("getLogicNodeRootOutput");
@@ -272,7 +296,7 @@ public class RamsesBundle
         if (targetProperty.isLinked()){
             throw new IllegalStateException("RamsesBundle.linkProperties failed! TargetProperty: " + targetProperty.getName() + " is already linked!");
         }
-        return unlinkProperties(m_nativeHandle, sourceProperty.getNativeHandle(), targetProperty.getNativeHandle());
+        return linkProperties(m_nativeHandle, sourceProperty.getNativeHandle(), targetProperty.getNativeHandle());
     }
 
     /**
@@ -386,6 +410,7 @@ public class RamsesBundle
     private native void dispose(long handle);
     private native boolean loadScene(long handle, int fdRamses, long fdRamsesOffset, long fdRamsesLength,
                                   int fdRlogic, long lengthFdRlogic, long fdRlogicOffset);
+    private native long getFeatureLevel(long handle);
     private native boolean showScene(long handle);
     private native boolean updateLogic(long handle);
     private native boolean flushRamsesScene(long handle);
@@ -394,6 +419,7 @@ public class RamsesBundle
     private native boolean unlinkProperties(long m_nativeHandle, long handleSource, long handleTarget);
     private native long getLogicNodeRootInput(long m_nativeHandle, String logicNodeName);
     private native long getLogicNodeRootOutput(long m_nativeHandle, String logicNodeName);
+    private native long getInterface(long m_nativeHandle, String logicNodeName);
     private native void executeRamshCommand(long handle, String command);
     private native void dumpSceneToFile(long handle, String fileName);
     private native void dumpLogicToFile(long handle, String fileName);
