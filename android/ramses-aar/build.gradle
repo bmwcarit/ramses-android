@@ -63,7 +63,7 @@ android {
         }
     }
 
-    sourceSets{
+    sourceSets {
         main {
             manifest.srcFile "AndroidManifest.xml"
         }
@@ -85,18 +85,18 @@ preBuild.doFirst {
     delete "${project.buildDir}/intermediates/mergedRamsesIncludeDir"
 
     copy {
-        from   "${ramsesLogicRootDir}/include"
+        from "${ramsesLogicRootDir}/include"
 
         into "${project.buildDir}/intermediates/mergedRLogicIncludeDir"
         include "**/*.h"
     }
 
     copy {
-        from   "${ramsesRootDir}/client/ramses-client/ramses-text-api/include",
-               "${ramsesRootDir}/framework/ramses-framework-api/include",
-               "${ramsesRootDir}/renderer/RendererLib/ramses-renderer-api/include",
-               "${ramsesRootDir}/client/ramses-client/ramses-client-api/include",
-               "${ramsesRootDir}/proprietary/external/displaycluster/include"
+        from "${ramsesRootDir}/client/ramses-client/ramses-text-api/include",
+                "${ramsesRootDir}/framework/ramses-framework-api/include",
+                "${ramsesRootDir}/renderer/RendererLib/ramses-renderer-api/include",
+                "${ramsesRootDir}/client/ramses-client/ramses-client-api/include",
+                "${ramsesRootDir}/proprietary/external/displaycluster/include"
 
         into "${project.buildDir}/intermediates/mergedRamsesIncludeDir"
         include "**/*.h"

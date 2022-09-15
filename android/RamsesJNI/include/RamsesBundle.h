@@ -48,12 +48,14 @@ namespace ramses_bundle
 
         //scene management
         bool loadSceneLogic(const void* rlogicBuffer, size_t bufferSize);
+        uint32_t getFeatureLevel() const;
         bool updateLogic();
         bool flushRamsesScene();
         bool dispatchRendererEvents();
         bool loadScene(int fdRamses, long offset, long fdSize,
                        const void* rlogicBuffer, size_t bufferSize);
         bool showScene();
+        rlogic::Property* getInterface(const char* interfaceName);
         rlogic::Property* getLogicNodeRootInput(const char* logicNodeName);
         const rlogic::Property* getLogicNodeRootOutput(const char* logicNodeName);
         bool linkProperties(const rlogic::Property& sourceProperty, const rlogic::Property& targetProperty);

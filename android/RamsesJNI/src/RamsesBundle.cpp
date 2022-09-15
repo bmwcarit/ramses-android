@@ -26,6 +26,7 @@
 #include "ramses-logic/RamsesNodeBinding.h"
 #include "ramses-logic/RamsesCameraBinding.h"
 #include "ramses-logic/AnimationNode.h"
+#include "ramses-logic/LuaInterface.h"
 
 namespace ramses_bundle
 {
@@ -178,14 +179,36 @@ namespace ramses_bundle
     }
 
     bool RamsesBundle::loadSceneLogic(const void* rlogicBuffer, size_t bufferSize) {
-        auto loadedLogicEngine = std::make_unique<rlogic::LogicEngine>();
-        bool success = loadedLogicEngine->loadFromBuffer(rlogicBuffer, bufferSize, m_ramsesScene);
-        if (!success)
-        {
-            return false;
+        rlogic::EFeatureLevel featureLevel{};
+        if (rlogic::LogicEngine::GetFeatureLevelFromBuffer("rlogic", rlogicBuffer, bufferSize, featureLevel)) {
+            __android_log_print(ANDROID_LOG_DEBUG, "RamsesNativeInterface", "Loading scene logic with feature level %d", featureLevel);
+            auto loadedLogicEngine = std::make_unique<rlogic::LogicEngine>(featureLevel);
+            bool success = loadedLogicEngine->loadFromBuffer(rlogicBuffer, bufferSize,
+                                                             m_ramsesScene);
+            if (!success) {
+                return false;
+            }
+            m_logicEngine = std::move(loadedLogicEngine);
+            return m_logicEngine->update();
         }
-        m_logicEngine = std::move(loadedLogicEngine);
-        return m_logicEngine->update();
+        return false;
+    }
+
+    uint32_t RamsesBundle::getFeatureLevel() const
+    {
+        if (m_logicEngine)
+        {
+            switch (m_logicEngine->getFeatureLevel())
+            {
+                case rlogic::EFeatureLevel_01:
+                    return 1u;
+                case rlogic::EFeatureLevel_02:
+                    return 2u;
+                default:
+                    break;
+            }
+        }
+        return 0u;
     }
 
     bool RamsesBundle::updateLogic()
@@ -212,8 +235,7 @@ namespace ramses_bundle
     {
         if (!m_renderer)
         {
-            __android_log_print(ANDROID_LOG_ERROR, "RamsesNativeInterface", "dispatchRendererEvents failed! Can't call before renderer and display are created!");
-            return false;
+            return true;
         }
         ramses::RendererEventHandlerEmpty dummyHandler;
         return m_renderer->dispatchEvents(dummyHandler) == ramses::StatusOK;
@@ -293,6 +315,24 @@ namespace ramses_bundle
     {
         auto* potentialLogicNode = findLogicNode(logicNodeName);
         return potentialLogicNode ? potentialLogicNode->getInputs() : nullptr;
+    }
+
+    rlogic::Property* RamsesBundle::getInterface(const char* interfaceName)
+    {
+        if(!m_logicEngine)
+        {
+            __android_log_print(ANDROID_LOG_ERROR, "RamsesNativeInterface", "Loaded scene does not contain logic!");
+            return nullptr;
+        }
+
+        auto* potentialInterface = m_logicEngine->findByName<rlogic::LuaInterface>(interfaceName);
+        if(!potentialInterface)
+        {
+            __android_log_print(ANDROID_LOG_WARN, "RamsesNativeInterface", "Loaded scene does not contain an interface with the name \'%s\'!", interfaceName);
+            return nullptr;
+        }
+
+        return potentialInterface->getInputs();
     }
 
     const rlogic::Property* RamsesBundle::getLogicNodeRootOutput(const char* logicNodeName)

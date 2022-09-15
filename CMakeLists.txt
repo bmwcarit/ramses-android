@@ -10,8 +10,8 @@ cmake_minimum_required(VERSION 3.13)
 
 
 set(AAR_VERSION_MAJOR 1)
-set(AAR_VERSION_MINOR 0)
-set(AAR_VERSION_PATCH 3)
+set(AAR_VERSION_MINOR 1)
+set(AAR_VERSION_PATCH 0)
 
 set(AAR_VERSION ${AAR_VERSION_MAJOR}.${AAR_VERSION_MINOR}.${AAR_VERSION_PATCH})
 
@@ -67,6 +67,7 @@ set(ramses-sdk_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(ramses-sdk_ENABLE_DLT OFF CACHE BOOL "" FORCE)
 set(ramses-sdk_FORCE_OFF_SOMEIP_HU ON CACHE BOOL "" FORCE)
 set(ramses-sdk_FORCE_OFF_SOMEIP_IC ON CACHE BOOL "" FORCE)
+set(ramses-sdk_ENABLE_TCP_SUPPORT OFF CACHE BOOL "" FORCE)
 
 # Disable some things which don't have a CMake option
 set(ramses-sdk_ramses-daemon OFF CACHE BOOL "" FORCE)

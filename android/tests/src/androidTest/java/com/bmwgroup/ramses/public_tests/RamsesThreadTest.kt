@@ -8,16 +8,13 @@
 
 package com.bmwgroup.ramses.public_tests
 
+import android.graphics.SurfaceTexture
+import android.view.Surface
 import com.bmwgroup.ramses.ClearColor
 import com.bmwgroup.ramses.Property
 import com.bmwgroup.ramses.RamsesThread
-
 import java.util.concurrent.CompletableFuture
 import kotlin.test.*
-
-import android.graphics.SurfaceTexture
-import android.view.Surface
-
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation as getInstrumentation
 
 class RamsesThreadTest {
@@ -92,6 +89,14 @@ class RamsesThreadTest {
             return future.get()
         }
 
+        fun getInterfaceThreadSafe(name: String): Property {
+            val future = CompletableFuture<Property>()
+            addRunnableToThreadQueue {
+                future.complete(testThread.getInterface(name))
+            }
+            return future.get()
+        }
+
         fun getLogicNodeRootInputThreadSafe(logicNodeName: String): Property {
             val future = CompletableFuture<Property>()
             addRunnableToThreadQueue {
@@ -132,12 +137,19 @@ class RamsesThreadTest {
             return future.get()
         }
 
+        fun getCurrentFeatureLevel(): Long {
+            val future = CompletableFuture<Long>()
+            addRunnableToThreadQueue {
+                future.complete(testThread.featureLevel)
+            }
+            return future.get()
+        }
+
         private var m_width = 0
         private var m_height = 0
         val m_futureAfterSceneLoad = CompletableFuture<RamsesThreadStateAfterSceneLoad>()
         val m_futureOnUpdate = CompletableFuture<Boolean>()
         val m_futureOnLogicUpdated = CompletableFuture<Boolean>()
-
 
         inner class RamsesThreadStateAfterSceneLoad(
             val isSceneLoaded: Boolean,
@@ -161,6 +173,17 @@ class RamsesThreadTest {
         assertTrue(state.isSceneLoaded)
         assertFalse(state.isUpdateLoopRunning)
         assertEquals(state.onSceneLoadedState, SceneState.LoadedSuccessfully)
+        assertEquals(1, testThread.getCurrentFeatureLevel())
+    }
+
+    @Test
+    fun ramsesThread_canLoadSceneWithValidSceneAndLogicWithFeatureLevel02() {
+        testThread.initRamsesThreadAndLoadScene(
+            getInstrumentation().context.resources.assets,
+            "testScene.ramses",
+            "testLogic_02.rlogic"
+        )
+        assertEquals(2, testThread.getCurrentFeatureLevel())
     }
 
     @Test
@@ -172,7 +195,10 @@ class RamsesThreadTest {
         val fdRlogic = assetManager.openFd("testLogic.rlogic")
 
         testThread.initRamsesThreadAndLoadScene(
-            fdRamses.parcelFileDescriptor, fdRamses.startOffset, fdRlogic.parcelFileDescriptor, fdRlogic.startOffset
+            fdRamses.parcelFileDescriptor,
+            fdRamses.startOffset,
+            fdRlogic.parcelFileDescriptor,
+            fdRlogic.startOffset
         )
 
         val state = testThread.m_futureAfterSceneLoad.get()
@@ -204,7 +230,10 @@ class RamsesThreadTest {
         val fdRlogic = assetManager.openFd("testLogic.rlogic")
 
         testThread.initRamsesThreadAndLoadScene(
-            fdRamses.parcelFileDescriptor, fdRamses.startOffset, fdRlogic.parcelFileDescriptor, fdRlogic.startOffset
+            fdRamses.parcelFileDescriptor,
+            fdRamses.startOffset,
+            fdRlogic.parcelFileDescriptor,
+            fdRlogic.startOffset
         )
 
         val state = testThread.m_futureAfterSceneLoad.get()
@@ -510,7 +539,6 @@ class RamsesThreadTest {
         assertFalse(testThread.isRenderingThreadSafe())
         assertEquals(60f, testThread.getRenderingFramerateThreadSafe())
 
-
         testThread.destroyRamsesBundleAndQuitThread()
         assertFalse(testThread.isAlive)
     }
@@ -547,6 +575,18 @@ class RamsesThreadTest {
 
         testThread.resizeDisplay(244, 562)
         assertEquals(Pair(244, 562), testThread.getWindowSizeThreadSafe())
+    }
+
+    @Test
+    fun ramsesThread_getInterfaceWorks() {
+        testThread.initRamsesThreadAndLoadScene(
+            getInstrumentation().context.resources.assets,
+            "testScene.ramses",
+            "testLogic.rlogic"
+        )
+        assertTrue(testThread.m_futureAfterSceneLoad.get().isSceneLoaded)
+
+        assertTrue(testThread.getInterfaceThreadSafe("intf").hasChild("struct"))
     }
 
     @Test
@@ -589,7 +629,6 @@ class RamsesThreadTest {
         assertTrue(testThread.m_futureAfterSceneLoad.get().isSceneLoaded)
 
         assertFailsWith<IllegalThreadStateException> { testThread.isRendering }
-
     }
 
     @Test
@@ -954,7 +993,6 @@ class RamsesThreadTest {
             override fun onLogicUpdated() {
                 futureOnLogicUpdated.complete(floatOutput.vec3f[0] == floatInput.float)
             }
-
         }
         outputsTestThread.initRamsesThreadAndLoadScene(
             getInstrumentation().context.resources.assets,
@@ -996,5 +1034,5 @@ class RamsesThreadTest {
         assertFalse(testThread.isAlive)
     }
 
-    //TODO add tests for linking/unlinking properties in specific callbacks
+    // TODO add tests for linking/unlinking properties in specific callbacks
 }

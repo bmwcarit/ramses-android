@@ -10,14 +10,10 @@ package com.bmwgroup.ramses
 import android.content.Intent
 import android.os.SystemClock
 import android.util.Log
-
 import androidx.test.internal.runner.junit4.statement.UiThreadStatement
-
 import java.io.File
 import java.util.concurrent.CompletableFuture
-
 import kotlin.test.*
-
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation as getInstrumentation
 import com.bmwgroup.ramses.RamshCommandBroadcastReceiver.ACTION_DUMP_SCENE as ACTION_DUMP_SCENE
 import com.bmwgroup.ramses.RamshCommandBroadcastReceiver.ACTION_RAMSH_COMMAND as ACTION_RAMSH_COMMAND
@@ -28,7 +24,6 @@ class RamshTest {
     companion object {
         lateinit var ramsesBundle: RamsesBundle
     }
-
 
     private fun cleanAppFilesDirectory() {
         val applicationFolder = getInstrumentation().targetContext.getExternalFilesDir(null)
@@ -58,7 +53,7 @@ class RamshTest {
         dumpSceneIntent.putExtra(EXTRA_FILENAME, fileName)
 
         getInstrumentation().targetContext.sendBroadcast(dumpSceneIntent)
-        //have to sleep to make sure scene broadcast is received and processed
+        // have to sleep to make sure scene broadcast is received and processed
         SystemClock.sleep(1000)
 
         val savedRamsesFile = File(
@@ -100,7 +95,7 @@ class RamshTest {
         dumpSceneIntent.putExtra(EXTRA_FILENAME, fileName)
 
         getInstrumentation().targetContext.sendBroadcast(dumpSceneIntent)
-        //have to sleep to make sure broadcast is received and processed
+        // have to sleep to make sure broadcast is received and processed
         SystemClock.sleep(1000)
 
         val savedRamsesFile = File(
@@ -135,7 +130,7 @@ class RamshTest {
         dumpSceneIntent.putExtra(EXTRA_FILENAME, fileName)
 
         getInstrumentation().targetContext.sendBroadcast(dumpSceneIntent)
-        //have to sleep to make sure scene is already dumped
+        // have to sleep to make sure scene is already dumped
         SystemClock.sleep(1000)
 
         val savedRamsesFile = File(
@@ -192,7 +187,7 @@ class RamshTest {
         dumpSceneIntent.putExtra(EXTRA_FILENAME, fileName)
 
         getInstrumentation().targetContext.sendBroadcast(dumpSceneIntent)
-        //have to sleep to make sure scene is already dumped
+        // have to sleep to make sure scene is already dumped
         SystemClock.sleep(1000)
 
         val savedRamsesFile = File(
@@ -214,7 +209,11 @@ class RamshTest {
                 ramsesThread.destroyRamsesBundleAndQuitThread()
                 assertFalse(ramsesThread.isAlive)
             } catch (e: InterruptedException) {
-                Log.e("ramsesThread_dumpSceneToFileWithDedicatedCommand", "InterruptedException:", e)
+                Log.e(
+                    "ramsesThread_dumpSceneToFileWithDedicatedCommand",
+                    "InterruptedException:",
+                    e
+                )
             }
         }
     }
@@ -240,7 +239,7 @@ class RamshTest {
         dumpSceneIntent.action = ACTION_DUMP_SCENE
 
         getInstrumentation().targetContext.sendBroadcast(dumpSceneIntent)
-        //have to sleep to make sure scene is already dumped
+        // have to sleep to make sure scene is already dumped
         SystemClock.sleep(1000)
 
         val savedRamsesFile = File(
@@ -287,7 +286,7 @@ class RamshTest {
         getInstrumentation().targetContext.sendBroadcast(dumpSceneIntent)
         // wait for the broadcast to take effect
         SystemClock.sleep(1000)
-        //dumpSceneToFile is a scene command and requires a flush to be executed
+        // dumpSceneToFile is a scene command and requires a flush to be executed
         ramsesBundle.updateLogic()
         ramsesBundle.flushRamsesScene()
 
@@ -329,7 +328,7 @@ class RamshTest {
         getInstrumentation().targetContext.sendBroadcast(dumpSceneIntent)
         // wait for the broadcast to take effect
         SystemClock.sleep(1000)
-        //dumpSceneToFile is a scene command and requires a flush to be executed
+        // dumpSceneToFile is a scene command and requires a flush to be executed
         ramsesBundle.updateLogic()
         ramsesBundle.flushRamsesScene()
 

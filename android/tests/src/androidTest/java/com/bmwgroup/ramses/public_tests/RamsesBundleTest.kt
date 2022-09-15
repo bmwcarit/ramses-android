@@ -13,8 +13,6 @@ import android.graphics.SurfaceTexture
 import android.view.Surface
 import com.bmwgroup.ramses.RamsesBundle
 import kotlin.test.*
-
-
 import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation as getInstrumentation
 
 class RamsesBundleTest {
@@ -45,6 +43,32 @@ class RamsesBundleTest {
             )
         )
 
+        assertEquals(1, ramsesBundle.featureLevel)
+
+        ramsesBundle.dispose()
+        assertTrue(ramsesBundle.nativeObjectDisposed())
+    }
+
+    @Test
+    fun ramsesBundle_CanLoadSceneWithValidSceneAndLogicWithFeatureLevel02() {
+        val ramsesBundle = RamsesBundle(null)
+
+        val logicFD =
+            getInstrumentation().context.resources.assets.openFd("testLogic_02.rlogic")
+        val sceneFD =
+            getInstrumentation().context.resources.assets.openFd("testScene.ramses")
+
+        assertTrue(
+            ramsesBundle.loadScene(
+                sceneFD.parcelFileDescriptor,
+                sceneFD.startOffset,
+                logicFD.parcelFileDescriptor,
+                logicFD.startOffset
+            )
+        )
+
+        assertEquals(2, ramsesBundle.featureLevel)
+
         ramsesBundle.dispose()
         assertTrue(ramsesBundle.nativeObjectDisposed())
     }
@@ -65,6 +89,7 @@ class RamsesBundleTest {
             )
         )
 
+        assertEquals(0, ramsesBundle.featureLevel)
         ramsesBundle.dispose()
         assertTrue(ramsesBundle.nativeObjectDisposed())
     }
@@ -123,6 +148,57 @@ class RamsesBundleTest {
                 logicFD.startOffset
             )
         )
+
+        ramsesBundle.dispose()
+        assertTrue(ramsesBundle.nativeObjectDisposed())
+    }
+
+    @Test
+    fun ramsesBundle_canGetInterfaceProperty() {
+        val ramsesBundle = RamsesBundle(null)
+
+        val sceneFD = getInstrumentation().context.resources.assets
+            .openFd("testScene.ramses")
+        val logicFD = getInstrumentation().context.resources.assets
+            .openFd("testLogic.rlogic")
+
+        assertTrue(
+            ramsesBundle.loadScene(
+                sceneFD.parcelFileDescriptor,
+                sceneFD.startOffset,
+                logicFD.parcelFileDescriptor,
+                logicFD.startOffset
+            )
+        )
+
+        assertNotNull(ramsesBundle.getInterface("intf"))
+        assertNotNull(ramsesBundle.getInterface("intf").getChild("struct"))
+        assertNotNull(ramsesBundle.getInterface("intf").getChild("struct").getChild("floatInput"))
+
+        ramsesBundle.dispose()
+        assertTrue(ramsesBundle.nativeObjectDisposed())
+    }
+
+    @Test
+    fun ramsesBundle_getInterfacePropertyReturnsNullIfInterfaceNotFound() {
+        val ramsesBundle = RamsesBundle(null)
+
+        val sceneFD = getInstrumentation().context.resources.assets
+            .openFd("testScene.ramses")
+        val logicFD = getInstrumentation().context.resources.assets
+            .openFd("testLogic.rlogic")
+
+        assertTrue(
+            ramsesBundle.loadScene(
+                sceneFD.parcelFileDescriptor,
+                sceneFD.startOffset,
+                logicFD.parcelFileDescriptor,
+                logicFD.startOffset
+            )
+        )
+
+        assertNotNull(ramsesBundle.getInterface("intf"))
+        assertNull(ramsesBundle.getInterface("wrongInterfaceName"))
 
         ramsesBundle.dispose()
         assertTrue(ramsesBundle.nativeObjectDisposed())
@@ -276,7 +352,7 @@ class RamsesBundleTest {
         ramsesBundle.dispose()
         assertTrue(ramsesBundle.nativeObjectDisposed())
     }
-    //TODO add tests for linking/unlinking properties
-    //TODO Daniel Add tests which verify that surface creation and corresponding states work as expected (e.g. clear color, viewport size, etc)
-    //TODO Asko Add tests for createDisplay and setMaximumFramerate (and all the other missing stuff).
+    // TODO add tests for linking/unlinking properties
+    // TODO Daniel Add tests which verify that surface creation and corresponding states work as expected (e.g. clear color, viewport size, etc)
+    // TODO Asko Add tests for createDisplay and setMaximumFramerate (and all the other missing stuff).
 }

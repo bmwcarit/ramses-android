@@ -437,6 +437,13 @@ public abstract class RamsesThread {
             Log.w(m_threadName, "startRendering: trying to start update and rendering before scene was loaded. No content will be shown!");
         }
         Log.i(m_threadName, "startRendering: starting to update and render!");
+
+        // TODO Violin/Asko we currently always start the update loop, even if there is no renderer to "consume" the frames
+        // This might (and as usual probably will!) lead to applications abusing the CPU with frame updates which are not shown anywhere because
+        // e.g. the view/surface are not visible, paused etc.. There are various ways to improve this, I am listing two approaches here:
+        // 1. Don't do "thread" but a on-dirty-update (renders single frame any time the surface is dirty, only do heavy stuff in thread (load scene))
+        // 2. Perform a single update loop when scene loaded initially, and after that couple the update loop to isRendering==true
+
         startUpdateLoop();
         m_ramsesBundle.setMaximumFramerate(m_maxFramerate);
         m_ramsesBundle.startRendering();
@@ -616,6 +623,22 @@ public abstract class RamsesThread {
     }
 
     /**
+     * This is a wrapper function for RamsesBundle.getInterface to keep the RamsesBundle member variable private.
+     * <p>
+     * This will avoid problems resulting from multithreaded access to the RamsesBundle.
+     *
+     * @param interfaceName the name of the logic node whose root input is of interest
+     * @return root input of given logic node name or null if the logic node doesn't exist
+     * @throws IllegalThreadStateException if the function gets called from another thread
+     * @throws IllegalStateException       if called before ramses bundle was created or after it was destroyed.
+     */
+    public Property getInterface(String interfaceName) {
+        ensureRunningInRamsesThread("getInterface");
+        ensureRamsesBundleCreated("getInterface");
+        return m_ramsesBundle.getInterface(interfaceName);
+    }
+
+    /**
      * This is a wrapper function for RamsesBundle.getLogicNodeRootInput to keep the RamsesBundle member variable private.
      * <p>
      * This will avoid problems resulting from multithreaded access to the RamsesBundle.
@@ -695,6 +718,16 @@ public abstract class RamsesThread {
     public float getRenderingFramerate() {
         ensureRunningInRamsesThread("getRenderingFramerate");
         return m_renderingFramerate;
+    }
+
+    /**
+     * Get feature level of currently loaded logic engine
+     * @return feature level of logic engine, or 0 in case of an error
+     */
+    public long getFeatureLevel() {
+        ensureRunningInRamsesThread("getFeatureLevel");
+        ensureRamsesBundleCreated("gertFeatureLevel");
+        return m_ramsesBundle.getFeatureLevel();
     }
 
     private void ensureRunningInRamsesThread(String functionName) {
